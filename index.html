@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Øyvinds treningsøkter</title>
+<meta name="theme-color" content="#0b1016">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+/* Layout: én kolonne, mobil først. Spillerskjermene fyller hele skjermen med store tall som leses på mølla. */
+--bg:#0b1016;
+--surface:#141b24;
+--surface-2:#1c2531;
+--line:#2a3542;
+--text:#eef3f8;
+--muted:#8d9aab;
+--accent:#ff8a3d;
+--walk:#4fb3ff;
+--run:#ff8a3d;
+--rest:#7f8da0;
+--z1:#7f8da0; --z2:#4fb3ff; --z3:#3ecf8e; --z4:#ffb020; --z5:#ff4d5e;
+--ok:#3ecf8e;
+--dimtext:#5d6876;
+--font-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+--font-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:16px;line-height:1.4;
+padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{max-width:560px;margin:0 auto;padding:16px 16px 40px;display:flex;flex-direction:column;gap:16px}
+h1,h2,h3{font-family:var(--font-display);font-weight:700;margin:0;text-wrap:balance;letter-spacing:.01em}
+h1{font-size:30px}
+h2{font-size:22px}
+.muted{color:var(--muted)}
+.row{display:flex;gap:10px;align-items:center}
+.spread{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:var(--surface-2);font-size:14px;font-weight:600;border:1px solid var(--line)}
+.chip.on{border-color:var(--z2);color:var(--z2)}
+.dot{width:8px;height:8px;border-radius:50%;background:currentColor}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 18px;border-radius:12px;font-weight:700;font-size:17px;background:var(--surface-2);border:1px solid var(--line);min-height:52px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#1a0d03}
+.btn.big{font-size:22px;min-height:68px;font-family:var(--font-display);letter-spacing:.03em}
+.btn.wide{width:100%}
+.tag{font-family:var(--font-display);font-weight:700;font-size:15px;letter-spacing:.05em;padding:2px 8px;border-radius:6px;background:var(--surface-2);text-transform:uppercase}
+.tag.A{color:var(--z2)} .tag.B{color:var(--z3)} .tag.C{color:var(--z4)} .tag.D{color:var(--run)}
+.next{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.next .title{font-size:26px}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{display:grid;grid-template-columns:62px 1fr auto;gap:12px;align-items:center;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;text-align:left;width:100%}
+.item .d{font-family:var(--font-display);font-size:15px;color:var(--muted);line-height:1.1}
+.item .d b{display:block;font-size:22px;color:var(--text)}
+.item.today{border-color:var(--accent)}
+.item.done{opacity:.6}
+.check{color:var(--ok);font-weight:700;font-size:20px}
+.steps{display:flex;flex-direction:column;gap:6px}
+.step{display:grid;grid-template-columns:8px 1fr auto;gap:10px;align-items:center;padding:8px 10px;background:var(--surface-2);border-radius:10px}
+.step .bar{width:8px;height:100%;min-height:30px;border-radius:4px}
+.tnum{font-variant-numeric:tabular-nums}
+.banner{padding:12px 14px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted);font-size:15px}
+/* Spiller (mølle) */
+.player{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top) + 10px) 14px calc(env(safe-area-inset-bottom) + 12px);gap:10px;z-index:10;overflow-y:auto}
+.pbar{display:flex;gap:2px;height:10px}
+.pbar span{flex:1;border-radius:3px;background:var(--surface-2);position:relative;overflow:hidden}
+.pbar span i{position:absolute;inset:0;transform-origin:left;background:currentColor}
+.ptop{display:flex;justify-content:space-between;align-items:center;font-family:var(--font-display);font-size:18px;color:var(--muted)}
+.ptop b{color:var(--text);font-size:22px}
+.stepname{font-family:var(--font-display);font-weight:800;font-size:44px;line-height:1;text-transform:uppercase;letter-spacing:.02em}
+.clock{font-family:var(--font-display);font-weight:700;font-size:min(34vw,170px);line-height:.9;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.tile .k{font-size:13px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.tile .v{font-family:var(--font-display);font-weight:700;font-size:46px;line-height:1;font-variant-numeric:tabular-nums}
+.tile .v small{font-size:20px;color:var(--muted);margin-left:4px}
+.hrtile{grid-column:1 / -1;display:flex;justify-content:space-between;align-items:center}
+.hrtile .v{font-size:64px}
+.zone{font-family:var(--font-display);font-weight:700;font-size:22px;padding:6px 12px;border-radius:10px;background:var(--surface-2)}
+.nextup{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:10px 12px;font-size:17px}
+.nextup b{font-family:var(--font-display);font-size:20px}
+.pcontrols{display:grid;grid-template-columns:1fr 2fr 1fr;gap:10px;margin-top:auto}
+.note{font-size:16px;color:var(--muted)}
+.flash{animation:flash .6s ease-out}
+@keyframes flash{from{background:var(--accent)}to{background:var(--bg)}}
+/* Styrke */
+.fig{background:var(--surface-2);border-radius:14px;display:flex;justify-content:center;padding:6px}
+.fig svg{width:100%;max-width:300px;height:auto}
+.sets{display:flex;flex-direction:column;gap:8px}
+.set{display:grid;grid-template-columns:34px 1fr 1fr 56px;gap:8px;align-items:center}
+.set .n{font-family:var(--font-display);font-size:22px;color:var(--muted);text-align:center}
+.field{display:flex;flex-direction:column;gap:2px}
+.field label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.field input{width:100%;font:inherit;font-family:var(--font-display);font-size:26px;font-weight:600;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-variant-numeric:tabular-nums}
+.tick{height:52px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);font-size:24px;font-weight:700}
+.tick.on{background:var(--ok);border-color:var(--ok);color:#03140b}
+.cues{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.rest{position:fixed;inset:0;background:rgba(6,9,13,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:20;padding:20px}
+.rest .clock{font-size:min(40vw,190px)}
+.exnav{display:flex;gap:6px;flex-wrap:wrap}
+.exnav button{width:34px;height:34px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line);font-family:var(--font-display);font-weight:700}
+.exnav button.cur{border-color:var(--accent);color:var(--accent)}
+.exnav button.ok{background:var(--ok);border-color:var(--ok);color:#03140b}
+.rpe{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.rpe button{height:46px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);font-family:var(--font-display);font-size:22px;font-weight:700}
+.rpe button.on{background:var(--accent);color:#1a0d03;border-color:var(--accent)}
+textarea{width:100%;min-height:70px;font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text)}
+.hidden{display:none!important}
+@media (prefers-reduced-motion: reduce){.flash{animation:none}}
+.toggle{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;cursor:pointer;padding:4px 0}
+.toggle input{position:absolute;opacity:0;width:1px;height:1px}
+.toggle .sw{width:52px;height:30px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);position:relative;transition:background .2s}
+.toggle .sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--muted);transition:transform .2s,background .2s}
+.toggle input:checked + .sw{background:var(--accent);border-color:var(--accent)}
+.toggle input:checked + .sw::after{transform:translateX(22px);background:#1a0d03}
+.toggle input:focus-visible + .sw{outline:3px solid var(--accent);outline-offset:2px}
+.adj{display:flex;gap:8px;margin-top:6px}
+.adj button{flex:1;height:40px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);font-size:24px;font-weight:700}
+.dim{position:fixed;inset:0;background:#000;color:var(--dimtext);z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:24px;text-align:center;cursor:pointer}
+.dimstep{font-family:var(--font-display);font-size:26px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px}
+.dimhr{font-family:var(--font-display);font-weight:700;font-size:min(40vw,200px);line-height:.9}
+.dimrow{display:flex;gap:28px;margin-top:24px;flex-wrap:wrap;justify-content:center}
+.dimv{font-family:var(--font-display);font-weight:600;font-size:44px;line-height:1}
+.dimlbl{font-size:14px;text-transform:uppercase;letter-spacing:.08em}
+#toast{position:fixed;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom) + 16px);background:var(--surface-2);border:1px solid var(--line);padding:14px;border-radius:12px;z-index:40;font-size:15px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+"use strict";
+/* ---------- Grunndata ---------- */
+const ZONES=[{n:1,min:0,max:118,c:"--z1",l:"Sone 1"},{n:2,min:119,max:147,c:"--z2",l:"Sone 2"},{n:3,min:148,max:162,c:"--z3",l:"Sone 3"},{n:4,min:163,max:177,c:"--z4",l:"Sone 4"},{n:5,min:178,max:250,c:"--z5",l:"Sone 5"}];
+const KIND={warmup:{l:"Oppvarming",c:"--walk"},walk:{l:"Gange",c:"--walk"},run:{l:"Løp",c:"--run"},hard:{l:"Hardt",c:"--run"},recover:{l:"Gange – hvile",c:"--rest"},cooldown:{l:"Nedvarming",c:"--walk"},hike:{l:"Terrengtur",c:"--z4"}};
+const TYPE_NAME={A:"Rolig løp",B:"Styrke og kjerne",C:"Langtur",D:"Motbakke"};
+const DAYS=["Søn","Man","Tir","Ons","Tor","Fre","Lør"];
+const MONTHS=["jan","feb","mar","apr","mai","jun","jul","aug","sep","okt","nov","des"];
+/* Øvelsesbibliotek: navn, stikkord og animasjon (figur sett fra siden, mot høyre). */
+const B0={head:[100,28],neck:[100,44],sh:[100,48],el:[100,74],ha:[100,98],hip:[100,102],kn:[100,140],ft:[100,178]};
+const P=o=>Object.assign({},B0,o);
+const EX={
+rdl:{name:"Rumensk markløft",en:"Romanian Deadlift (Dumbbell)",unit:"reps",rest:90,
+cues:["Manualer foran lårene, rett rygg","Skyv hoftene bakover, lett bøy i knærne","Senk til du kjenner strekk bak i låret","Skyv hoftene fram og stå rett opp"],
+props:[{t:"db",at:"ha"}],dur:3000,
+A:P({ha:[100,100]}),B:P({head:[56,66],neck:[68,72],sh:[70,74],el:[70,98],ha:[70,122],hip:[108,100],kn:[104,140],ft:[100,178]})},
+legpress:{name:"Beinpress",en:"Leg Press (Machine)",unit:"reps",rest:90,
+cues:["Hele foten på platen, hoftebredde","Senk kontrollert til ca. 90° i knærne","Knærne peker samme vei som tærne","Ikke lås knærne helt i toppen"],
+props:[{t:"line",p:[[28,92],[60,150]]},{t:"line",p:[[60,150],[100,146]]},{t:"plate",at:"ft"}],dur:2800,
+A:P({head:[44,92],neck:[54,104],sh:[56,106],el:[72,124],ha:[86,134],hip:[92,140],kn:[112,104],ft:[142,118]}),
+B:P({head:[44,92],neck:[54,104],sh:[56,106],el:[72,124],ha:[86,134],hip:[92,140],kn:[132,118],ft:[172,100]})},
+latpull:{name:"Nedtrekk i kabel",en:"Lat Pulldown (Cable)",unit:"reps",rest:90,
+cues:["Bredt grep, lårene under puten","Brystet fram, skuldrene ned","Trekk stanga til øvre del av brystet","Slipp opp kontrollert med strake armer"],
+props:[{t:"line",p:[[72,132],[124,132]]},{t:"bar",at:"ha"},{t:"cable",at:"ha"}],dur:2600,
+A:P({head:[96,60],neck:[98,76],sh:[98,80],el:[94,50],ha:[92,22],hip:[100,130],kn:[132,130],ft:[132,172]}),
+B:P({head:[96,60],neck:[98,76],sh:[98,80],el:[90,112],ha:[110,84],hip:[100,130],kn:[132,130],ft:[132,172]})},
+dbbench:{name:"Brystpress med manualer",en:"Bench Press (Dumbbell)",unit:"reps",rest:90,
+cues:["Ligg med føttene i gulvet, skuldrene inntrukket","Press manualene rett opp over brystet","Senk kontrollert til albuene er litt under benken","Hold håndleddene rette"],
+props:[{t:"rect",x:28,y:124,w:116,h:8},{t:"line",p:[[40,132],[40,178]]},{t:"line",p:[[132,132],[132,178]]},{t:"db",at:"ha"}],dur:2800,
+A:P({head:[40,112],neck:[54,117],sh:[58,118],el:[60,90],ha:[60,62],hip:[120,120],kn:[146,128],ft:[152,176]}),
+B:P({head:[40,112],neck:[54,117],sh:[58,118],el:[76,128],ha:[62,100],hip:[120,120],kn:[146,128],ft:[152,176]})},
+stepup:{name:"Step-up på benk",en:"Step Up",unit:"reps",perSide:true,rest:75,
+cues:["Benk eller kasse i knehøyde","Hele foten opp på benken","Skyv fra med foten som står oppe, ikke sprett fra gulvet","Gå kontrollert ned igjen"],
+props:[{t:"rect",x:118,y:146,w:54,h:34}],dur:3000,
+A:P({kn:[124,118],ft:[132,146],kn2:[98,140],ft2:[96,178]}),
+B:P({head:[134,-6],neck:[134,10],sh:[134,14],el:[134,40],ha:[134,64],hip:[134,68],kn:[136,106],ft:[140,146],kn2:[122,108],ft2:[124,140]})},
+lunge:{name:"Utfall bakover, langsomt",en:"Reverse Lunge",unit:"reps",perSide:true,rest:75,
+cues:["Ta et langt steg bakover","Senk deg langsomt – tell 3 sekunder ned","Fremre kne over ankelen","Skyv opp med fremre bein. Trener bremsing i nedoverbakker"],
+props:[],dur:3400,
+A:P({}),B:P({head:[100,52],neck:[100,68],sh:[100,72],el:[100,98],ha:[100,122],hip:[100,126],kn:[128,128],ft:[130,178],kn2:[84,168],ft2:[58,176]})},
+pallof:{name:"Pallof press",en:"Cable Core Pallof Press",unit:"reps",perSide:true,rest:60,
+cues:["Stå med siden mot kabelen, håndtaket mot brystet","Press armene rett fram","Ikke la kabelen vri overkroppen","Hold 1–2 sek ute, før tilbake rolig"],
+props:[{t:"anchor",p:[8,74]},{t:"cablefrom",from:[8,74],at:"ha"}],dur:3000,
+A:P({el:[112,88],ha:[110,74],kn:[104,140]}),B:P({el:[130,76],ha:[156,74],kn:[104,140]})},
+plank:{name:"Planke",en:"Plank",unit:"sec",rest:60,
+cues:["Albuene under skuldrene","Rett linje fra hode til hæl","Stram mage og sete","Pust rolig – ikke la hofta synke"],
+props:[],dur:3200,
+A:P({head:[34,128],neck:[46,136],sh:[50,140],el:[50,170],ha:[74,172],hip:[118,150],kn:[150,160],ft:[184,172]}),
+B:P({head:[34,128],neck:[46,136],sh:[50,140],el:[50,170],ha:[74,172],hip:[118,147],kn:[150,159],ft:[184,172]})},
+deadbug:{name:"Dead bug",en:"Dead Bug",unit:"reps",perSide:true,rest:60,
+cues:["Ligg på ryggen, armene rett opp, knærne i 90°","Press korsryggen mot gulvet hele tiden","Strekk motsatt arm og bein sakte ut","Tilbake og bytt side"],
+props:[],dur:3200,
+A:P({head:[30,158],neck:[44,164],sh:[48,166],el:[50,138],ha:[50,112],hip:[112,168],kn:[112,132],ft:[142,132]}),
+B:P({head:[30,158],neck:[44,164],sh:[48,166],el:[24,152],ha:[4,160],hip:[112,168],kn:[112,132],ft:[142,132],el2:[50,138],ha2:[50,112],kn2:[148,156],ft2:[184,164]})},
+kneeraise:{name:"Kneløft i stol",en:"Knee Raise Parallel Bars",unit:"reps",rest:60,
+cues:["Underarmene på putene, ryggen inntil","Løft knærne mot brystet","Senk kontrollert – ikke sving","Pust ut når knærne går opp"],
+props:[{t:"line",p:[[86,36],[86,132]]},{t:"line",p:[[86,84],[134,84]]}],dur:2800,
+A:P({head:[100,30],neck:[100,46],sh:[100,50],el:[100,84],ha:[126,84],hip:[100,118],kn:[100,150],ft:[100,182]}),
+B:P({head:[100,30],neck:[100,46],sh:[100,50],el:[100,84],ha:[126,84],hip:[100,118],kn:[132,104],ft:[134,138]})},
+farmers:{name:"Farmer's walk",en:"Farmers Walk",unit:"m",rest:90,
+cues:["Tunge manualer i hver hånd","Rett rygg, skuldrene ned og bak","Korte, raske skritt","Stram mage hele veien"],
+props:[{t:"db",at:"ha"}],dur:1400,
+A:P({kn:[110,140],ft:[118,178],kn2:[92,140],ft2:[82,178]}),B:P({kn:[92,140],ft:[82,178],kn2:[110,140],ft2:[118,178]})}
+};
+/* ---------- Tilstand ---------- */
+const LS={logs:"oyv.logs.v1",workouts:"oyv.workouts.v1",settings:"oyv.settings.v1"};
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
+const S={workouts:[],wVersion:null,logs:store.get(LS.logs,{}),view:"home",cur:null,hr:null,hrDev:null,hrSamples:[],
+settings:Object.assign({awake:true,speech:true,autoDim:false},store.get(LS.settings,{}))};
+let player=null;
+const $=s=>document.querySelector(s);
+const app=$("#app");
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pad=n=>String(n).padStart(2,"0");
+const fmt=s=>{s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h}:${pad(m)}:${pad(x)}`:`${m}:${pad(x)}`};
+const fmtMin=s=>{const m=Math.round(s/60);return m>=60?`${Math.floor(m/60)} t ${m%60?m%60+" min":""}`.trim():`${m} min`};
+const km=n=>n.toFixed(2).replace(".",",");
+const nb=n=>String(n).replace(".",",");
+const todayStr=()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+const dParse=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
+const zoneOf=hr=>ZONES.find(z=>hr>=z.min&&hr<=z.max)||ZONES[0];
+const totalDur=w=>(w.steps||[]).reduce((a,s)=>a+s.dur,0);
+function saveSettings(){store.set(LS.settings,S.settings)}
+/* ---------- Lyd, vibrasjon, tale, skjerm ---------- */
+let ac=null;
+function audio(){try{if(!ac)ac=new (window.AudioContext||window.webkitAudioContext)();if(ac.state==="suspended")ac.resume();}catch(e){ac=null}return ac}
+function beep(freq=880,ms=150,vol=.35){const a=audio();if(!a)return;try{const o=a.createOscillator(),g=a.createGain();o.frequency.value=freq;o.type="square";g.gain.value=vol;o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+ms/1000);}catch(e){}}
+function vib(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
+function say(t){if(!S.settings.speech)return;try{const u=new SpeechSynthesisUtterance(t);u.lang="nb-NO";u.rate=1.02;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
+let wake=null;
+async function keepAwake(on){
+try{
+if(on&&S.settings.awake&&"wakeLock" in navigator){if(!wake){wake=await navigator.wakeLock.request("screen");wake.addEventListener("release",()=>{wake=null})}}
+else if(wake){await wake.release();wake=null}
+}catch(e){wake=null}
+}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&player&&!player.paused)keepAwake(true)});
+/* ---------- Puls fra HRM600 (Bluetooth) ---------- */
+const btOk=()=>!!(navigator.bluetooth&&navigator.bluetooth.requestDevice);
+async function connectHR(){
+if(!btOk()){toast("Bluetooth er ikke tilgjengelig i denne nettleseren. Bruk Chrome på Android.");return}
+try{
+const dev=await navigator.bluetooth.requestDevice({filters:[{services:["heart_rate"]}]});
+const srv=await dev.gatt.connect();
+const ch=await (await srv.getPrimaryService("heart_rate")).getCharacteristic("heart_rate_measurement");
+await ch.startNotifications();
+ch.addEventListener("characteristicvaluechanged",e=>{const v=e.target.value;const f=v.getUint8(0);const hr=(f&1)?v.getUint16(1,true):v.getUint8(1);S.hr=hr;if(player&&!player.paused)S.hrSamples.push(hr);updateHR()});
+dev.addEventListener("gattserverdisconnected",()=>{S.hrDev=null;S.hr=null;updateHR();refreshChips();toast("Pulsbeltet ble koblet fra.")});
+S.hrDev=dev;refreshChips();toast("HRM600 er koblet til.");
+}catch(e){if(e&&e.name!=="NotFoundError")toast("Fikk ikke koblet til pulsbeltet. Fukt beltet, ta det på og prøv igjen.")}
+}
+function refreshChips(){document.querySelectorAll(".hrbtn").forEach(b=>{b.classList.toggle("on",!!S.hrDev);b.innerHTML=`<span class="dot"></span>${S.hrDev?(S.hr?S.hr+" bpm":"HRM600 koblet"):"Koble til HRM600"}`})}
+function updateHR(){
+refreshChips();
+const z=S.hr!=null?zoneOf(S.hr):null;
+const el=$("#hrv");
+if(el){if(S.hr==null){el.textContent="--";$("#hrz").textContent="Ikke koblet";$("#hrz").style.color="var(--muted)"}else{el.textContent=S.hr;$("#hrz").textContent=z.l;$("#hrz").style.color=`var(${z.c})`}}
+const dh=$("#dimhr");if(dh){dh.textContent=S.hr==null?"--":S.hr;dh.style.color=z?`var(${z.c})`:"var(--dimtext)"}
+if(player&&player.step&&player.step.hrMax&&S.hr>player.step.hrMax&&!player.paused){const now=Date.now();if(!player.lastHrWarn||now-player.lastHrWarn>20000){player.lastHrWarn=now;beep(440,250,.3);vib([200,100,200]);say("Pulsen er over "+player.step.hrMax+". Senk farten.")}}
+}
+let toastT;
+function toast(msg){let t=$("#toast");if(!t){t=document.createElement("div");t.id="toast";document.body.appendChild(t)}t.textContent=msg;t.classList.remove("hidden");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.add("hidden"),4500)}
+/* ---------- Data ---------- */
+function setWorkouts(list,version){S.workouts=(list||[]).slice().sort((a,b)=>(a.date+a.id).localeCompare(b.date+b.id));S.wVersion=version||null}
+async function loadWorkouts(){
+const cached=store.get(LS.workouts,null);
+if(cached)setWorkouts(cached.workouts,cached.version);
+render();
+try{
+const r=await fetch("workouts.json",{cache:"no-store"});
+if(r.ok){const j=await r.json();if(j&&Array.isArray(j.workouts)){
+const local=store.get(LS.workouts,null);
+if(!local||!local.imported||String(j.version)>=String(local.version)){setWorkouts(j.workouts,j.version);store.set(LS.workouts,{version:j.version,workouts:j.workouts})}
+if(!player)render()}}
+}catch(e){}
+}
+function importWorkouts(text){
+let j;try{j=JSON.parse(text)}catch(e){toast("Teksten er ikke gyldig øktdata. Lim inn hele teksten fra Claude.");return false}
+const list=Array.isArray(j)?j:j.workouts;
+if(!Array.isArray(list)||!list.every(w=>w&&w.id&&w.date&&w.type)){toast("Fant ingen økter i teksten.");return false}
+const byId={};S.workouts.forEach(w=>byId[w.id]=w);list.forEach(w=>{if(w.delete)delete byId[w.id];else byId[w.id]=w});
+const merged=Object.values(byId);const version=(j.version||todayStr());
+setWorkouts(merged,version);store.set(LS.workouts,{version,workouts:merged,imported:true});
+toast(`${list.length} økter er lagt inn.`);return true;
+}
+function lastKg(exKey){
+let best=null;
+Object.values(S.logs).forEach(l=>{(l.strength||[]).forEach(e=>{if(e.ex===exKey){const kg=(e.sets||[]).filter(s=>s.done&&s.kg).map(s=>+s.kg);if(kg.length&&(!best||l.completedAt>best.t))best={t:l.completedAt,kg:Math.max(...kg)}}})});
+return best?best.kg:"";
+}
+function saveLog(id,data){S.logs[id]=data;const ok=store.set(LS.logs,S.logs);if(!ok)toast("Kunne ikke lagre på telefonen. Kopier loggen og send den til Claude.");return ok}
+function exportText(){
+const ls=Object.entries(S.logs).sort((a,b)=>String(a[1].completedAt).localeCompare(String(b[1].completedAt)));
+return "TRENINGSLOGG "+todayStr()+"\n"+JSON.stringify(ls.map(([id,l])=>Object.assign({id},l)));
+}
+async function copy(text){try{await navigator.clipboard.writeText(text);toast("Kopiert. Lim det inn i chatten med Claude.");return true}catch(e){return false}}
+/* ---------- Visninger ---------- */
+function render(){
+if(S.view==="home")return renderHome();
+if(S.view==="detail")return renderDetail();
+if(S.view==="summary")return renderSummary();
+if(S.view==="history")return renderHistory();
+if(S.view==="settings")return renderSettings();
+}
+const hrChip=()=>`<button class="chip hrbtn ${S.hrDev?"on":""}" aria-label="Koble til pulsbelte"><span class="dot"></span>${S.hrDev?(S.hr?S.hr+" bpm":"HRM600 koblet"):"Koble til HRM600"}</button>`;
+function dateLabel(s){const d=dParse(s);return {wd:DAYS[d.getDay()],dm:`${d.getDate()}. ${MONTHS[d.getMonth()]}`}}
+function wSummary(w){if(w.type==="B")return `${(w.exercises||[]).length} øvelser`;const t=fmtMin(totalDur(w));return w.where?`${t} · ${w.where}`:t}
+function renderHome(){
+const t=todayStr(),ws=S.workouts;
+const next=ws.find(w=>w.date>=t&&!S.logs[w.id]);
+const from=new Date();from.setDate(from.getDate()-3);
+const fromS=`${from.getFullYear()}-${pad(from.getMonth()+1)}-${pad(from.getDate())}`;
+const shown=ws.filter(w=>w.date>=fromS).slice(0,14);
+let body="";
+if(!ws.length)body=`<div class="banner">Henter øktene … Er du uten nett, åpne appen igjen når du har dekning.</div>`;
+if(next){const dl=dateLabel(next.date);
+body+=`<div class="card next"><div class="spread"><span class="tag ${next.type}">${next.type} · ${TYPE_NAME[next.type]||""}</span><span class="muted">${next.date===t?"I dag":dl.wd+" "+dl.dm}</span></div>
+<h2 style="font-size:28px">${esc(next.title)}</h2><div class="muted">${esc(wSummary(next))}</div>
+<button class="btn primary big wide" data-open="${esc(next.id)}">Se økta og start</button></div>`}
+if(shown.length){body+=`<h2>Plan</h2><div class="list">`+shown.map(w=>{const dl=dateLabel(w.date);const done=!!S.logs[w.id];
+return `<button class="item ${w.date===t?"today":""} ${done?"done":""}" data-open="${esc(w.id)}"><div class="d">${dl.wd}<b>${dParse(w.date).getDate()}.</b></div>
+<div><div class="row"><span class="tag ${w.type}">${w.type}</span><strong>${esc(w.title)}</strong></div><div class="muted" style="font-size:14px">${esc(wSummary(w))}</div></div>
+<div>${done?'<span class="check" aria-label="Fullført">✓</span>':'<span class="muted">›</span>'}</div></button>`}).join("")+`</div>`}
+app.innerHTML=`<div class="wrap">
+<div><h1>Treningsøkter</h1><div class="muted">Mot Hornindal Rundt 75 km</div></div>
+<div class="row" style="flex-wrap:wrap">${hrChip()}<button class="chip" id="histbtn">Logg</button><button class="chip" id="setbtn">Innstillinger</button></div>
+${body}</div>`;
+bindCommon();
+}
+function bindCommon(){
+app.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{S.cur=S.workouts.find(w=>w.id===b.dataset.open);S.view="detail";render();window.scrollTo(0,0)});
+app.querySelectorAll(".hrbtn").forEach(b=>b.onclick=connectHR);
+const hs=$("#histbtn");if(hs)hs.onclick=()=>{S.view="history";render()};
+const st=$("#setbtn");if(st)st.onclick=()=>{S.view="settings";render()};
+const bk=$("#back");if(bk)bk.onclick=()=>{S.view="home";render()};
+}
+function stepRow(s){const k=KIND[s.kind]||KIND.walk;
+const bits=[s.incline!=null?`${nb(s.incline)} %`:"",s.speed?`${nb(s.speed)} km/t`:"",s.hrMax?`puls ${s.hrMin||""}–${s.hrMax}`:""].filter(Boolean).join(" · ");
+return `<div class="step"><span class="bar" style="background:var(${k.c})"></span><div><strong>${esc(s.label||k.l)}</strong><div class="muted" style="font-size:14px">${esc(bits)}</div></div><span class="tnum">${fmt(s.dur)}</span></div>`}
+function toggleRow(id,label,desc,on){return `<label class="toggle" for="${id}"><span><strong>${label}</strong><span class="muted" style="display:block;font-size:14px">${desc}</span></span><input type="checkbox" id="${id}" ${on?"checked":""}><span class="sw" aria-hidden="true"></span></label>`}
+function renderDetail(){
+const w=S.cur;if(!w){S.view="home";return render()}
+const log=S.logs[w.id];const dl=dateLabel(w.date);
+const inner=w.type==="B"
+?`<div class="list">`+(w.exercises||[]).map((e,i)=>{const x=EX[e.ex]||{name:e.ex};return `<div class="step"><span class="bar" style="background:var(--z3)"></span><div><strong>${esc(x.name)}</strong><div class="muted" style="font-size:14px">${e.sets} × ${e.reps}${x.unit==="sec"?" sek":x.unit==="m"?" m":""}${x.perSide?" per side":""}</div></div><span class="muted">${i+1}</span></div>`}).join("")+`</div>`
+:`<div class="steps">`+(w.steps||[]).map(stepRow).join("")+`</div>`;
+app.innerHTML=`<div class="wrap">
+<button class="btn" id="back" style="align-self:flex-start">‹ Tilbake</button>
+<div class="row"><span class="tag ${w.type}">${w.type} · ${TYPE_NAME[w.type]||""}</span><span class="muted">${dl.wd} ${dl.dm}</span></div>
+<h1>${esc(w.title)}</h1>
+${w.note?`<div class="banner">${esc(w.note)}</div>`:""}
+${w.type!=="B"?`<div class="muted">Totalt ${fmtMin(totalDur(w))}. Fart og stigning er veiledende – pulsen styrer.</div>`:""}
+${log?`<div class="banner" style="color:var(--ok)">Fullført ${new Date(log.completedAt).toLocaleDateString("no-NO")}${log.rpe?` · Anstrengelse ${log.rpe}/10`:""}</div>`:""}
+${inner}
+<div class="card">
+${toggleRow("t-awake","Hold skjermen på","Skjermen slukker ikke under økta",S.settings.awake)}
+${w.type!=="B"?toggleRow("t-dim","Demp skjermen automatisk","Etter 30 sek vises bare puls, tid og km i dempet visning. Trykk for full visning",S.settings.autoDim):""}
+${toggleRow("t-speech","Tale","Stemmen leser opp neste steg",S.settings.speech)}
+</div>
+<div class="banner">Trykk start på klokka samtidig${w.type==="B"?" («Styrke»)":w.type==="C"?" (Terrengløp-profilen)":" (Garmin-økta ligger klar)"}.</div>
+<div class="row" style="flex-wrap:wrap">${hrChip()}</div>
+<button class="btn primary big wide" id="start">${log?"Gjør økta på nytt":"Start økta"}</button>
+</div>`;
+bindCommon();bindToggles();
+$("#start").onclick=()=>{audio();if(w.type==="B")startStrength(w);else startTread(w)};
+}
+function bindToggles(){
+[["t-awake","awake"],["t-dim","autoDim"],["t-speech","speech"]].forEach(([id,k])=>{const el=$("#"+id);if(el)el.onchange=()=>{S.settings[k]=el.checked;saveSettings();if(k==="awake"&&player)keepAwake(!player.paused)}});
+}
+function renderSettings(){
+app.innerHTML=`<div class="wrap">
+<button class="btn" id="back" style="align-self:flex-start">‹ Tilbake</button><h1>Innstillinger</h1>
+<div class="card">
+${toggleRow("t-awake","Hold skjermen på under økta","Skjermen slukker ikke mens en økt pågår",S.settings.awake)}
+${toggleRow("t-dim","Demp skjermen automatisk på mølla","Etter 30 sek uten berøring vises bare puls, tid og km",S.settings.autoDim)}
+${toggleRow("t-speech","Tale ved stegbytte","Stemmen leser opp neste steg",S.settings.speech)}
+</div>
+<div class="card"><h2>Nye økter fra Claude</h2>
+<div class="muted">Øktene hentes automatisk. Har Claude gitt deg en tekst med økter, lim den inn her.</div>
+<label for="imp" class="muted" style="font-size:14px">Øktdata</label><textarea id="imp" placeholder='{"workouts":[...]}'></textarea>
+<button class="btn primary" id="impbtn">Legg inn øktene</button>
+<div class="muted" style="font-size:14px">Øktversjon: ${esc(S.wVersion||"–")} · ${S.workouts.length} økter</div>
+</div>
+<div class="card"><h2>Bluetooth og skjerm</h2>
+<div class="muted">Bluetooth-puls: ${btOk()?"tilgjengelig":"ikke tilgjengelig i denne nettleseren"} · Hold skjermen på: ${"wakeLock" in navigator?"tilgjengelig":"ikke tilgjengelig"}</div>
+</div>
+</div>`;
+bindCommon();bindToggles();
+$("#impbtn").onclick=()=>{if(importWorkouts($("#imp").value)){S.view="home";render()}};
+}
+/* ---------- Mølle-spiller ---------- */
+function startTread(w){
+const steps=(w.steps||[]).filter(s=>s.dur>0);
+if(!steps.length){toast("Økta har ingen steg.");return}
+S.hrSamples=[];
+player={w,steps,i:0,elapsedStep:0,elapsedTotal:0,dist:0,paused:false,last:performance.now(),warned:{},step:steps[0],speed:steps[0].speed||0,dim:false,lastTouch:Date.now(),wakeUntil:0};
+keepAwake(true);drawTread();announce();
+player.t=setInterval(tickTread,200);
+}
+function announce(){const s=player.step,k=KIND[s.kind]||KIND.walk;
+const parts=[s.label||k.l,fmtMin(s.dur).replace("min","minutter")];if(s.incline!=null)parts.push(nb(s.incline)+" prosent stigning");if(s.speed)parts.push(nb(s.speed)+" kilometer i timen");say(parts.join(". "))}
+function setStep(i){const p=player;p.i=i;p.step=p.steps[i];p.elapsedStep=0;p.speed=p.step.speed||0;p.wakeUntil=Date.now()+10000;if(p.dim)setDim(false,true);drawTread(true);announce()}
+function tickTread(){
+const p=player;if(!p)return;const now=performance.now();const dt=(now-p.last)/1000;p.last=now;if(p.paused)return;
+p.elapsedStep+=dt;p.elapsedTotal+=dt;if(p.step.kind!=="hike")p.dist+=p.speed*dt/3600;
+const left=p.step.dur-p.elapsedStep,sec=Math.ceil(left);
+if(sec<=3&&sec>=1&&!p.warned[p.i+":"+sec]){p.warned[p.i+":"+sec]=1;beep(660,120)}
+if(left<=0){if(p.i>=p.steps.length-1){finishTread();return}beep(990,400);vib([300,100,300]);setStep(p.i+1);return}
+if(S.settings.autoDim&&!p.dim&&Date.now()-p.lastTouch>30000&&Date.now()>p.wakeUntil)setDim(true);
+updTread();
+}
+function drawTread(flash){
+const p=player,s=p.step,k=KIND[s.kind]||KIND.walk,nx=p.steps[p.i+1];
+app.innerHTML=`<div class="player ${flash?"flash":""}" id="pl">
+<div class="pbar" id="pbar">${p.steps.map((st,j)=>`<span style="color:var(${(KIND[st.kind]||KIND.walk).c});flex:${Math.max(st.dur,30)}"><i style="transform:scaleX(${j<p.i?1:0})"></i></span>`).join("")}</div>
+<div class="ptop"><span>Steg <b>${p.i+1}</b> av ${p.steps.length}</span><span>Igjen <b id="totleft" class="tnum"></b></span></div>
+<div class="stepname" style="color:var(${k.c})">${esc(s.label||k.l)}</div>
+<div class="clock" id="clock"></div>
+<div class="tiles">
+<div class="tile"><div class="k">Stigning</div><div class="v">${s.incline!=null?nb(s.incline):"–"}<small>%</small></div></div>
+<div class="tile">${s.kind==="hike"?`<div class="k">Tid totalt</div><div class="v tnum" id="tot"></div>`:`<div class="k">Fart</div><div class="v"><span id="spd">${p.speed?nb(p.speed.toFixed(1)):"–"}</span><small>km/t</small></div><div class="adj"><button id="sm" aria-label="Senk farten 0,1">−</button><button id="sp" aria-label="Øk farten 0,1">+</button></div>`}</div>
+<div class="tile hrtile"><div><div class="k">Puls${s.hrMax?` · mål ${s.hrMin||""}–${s.hrMax}`:""}</div><div class="v" id="hrv">--</div></div><div class="zone" id="hrz">Ikke koblet</div></div>
+${s.kind!=="hike"?`<div class="tile"><div class="k">Distanse ca.</div><div class="v tnum"><span id="km">0,00</span><small>km</small></div></div><div class="tile"><div class="k">Tid totalt</div><div class="v tnum" id="tot"></div></div>`:""}
+</div>
+${s.note?`<div class="note">${esc(s.note)}</div>`:""}
+<div class="nextup">${nx?`Neste: <b>${esc(nx.label||(KIND[nx.kind]||KIND.walk).l)}</b> · ${fmt(nx.dur)}${nx.incline!=null?` · ${nb(nx.incline)} %`:""}${nx.speed?` · ${nb(nx.speed)} km/t`:""}`:"Siste steg"}</div>
+<div class="row" style="justify-content:space-between;flex-wrap:wrap">${hrChip()}<button class="chip" id="dimbtn">Dempet visning</button></div>
+<div class="pcontrols">
+<button class="btn" id="prev">‹ Forrige</button>
+<button class="btn primary big" id="pause">${p.paused?"Fortsett":"Pause"}</button>
+<button class="btn" id="skip">Neste ›</button>
+</div>
+<button class="btn wide" id="stop">Avslutt økta</button>
+</div>
+<div class="dim ${p.dim?"":"hidden"}" id="dim" role="button" aria-label="Trykk for full visning">
+<div class="dimstep" id="dimstep">${esc(s.label||k.l)}</div>
+<div class="dimhr tnum" id="dimhr">--</div><div class="dimlbl">puls</div>
+<div class="dimrow"><div><div class="dimv tnum" id="dimleft"></div><div class="dimlbl">igjen av steget</div></div><div><div class="dimv tnum" id="dimtot"></div><div class="dimlbl">tid totalt</div></div>${s.kind!=="hike"?`<div><div class="dimv tnum" id="dimkm"></div><div class="dimlbl">km ca.</div></div>`:""}</div>
+<div class="dimlbl" style="margin-top:24px">Trykk for full visning</div>
+</div>`;
+const touch=()=>{p.lastTouch=Date.now()};
+$("#pl").addEventListener("pointerdown",touch);
+$("#pause").onclick=()=>{p.paused=!p.paused;p.last=performance.now();$("#pause").textContent=p.paused?"Fortsett":"Pause";keepAwake(!p.paused)};
+$("#skip").onclick=()=>{if(p.i>=p.steps.length-1){finishTread();return}setStep(p.i+1)};
+$("#prev").onclick=()=>{if(p.elapsedStep>5||p.i===0){p.elapsedTotal-=p.elapsedStep;p.elapsedStep=0;drawTread()}else setStep(p.i-1)};
+$("#stop").onclick=()=>showConfirm("Avslutte økta nå?","Du kan lagre det du har gjort så langt.",finishTread);
+$("#dimbtn").onclick=()=>setDim(true);
+$("#dim").onclick=()=>{p.lastTouch=Date.now();setDim(false)};
+const sm=$("#sm"),sp=$("#sp");
+if(sm)sm.onclick=()=>{p.speed=Math.max(0,+(p.speed-0.1).toFixed(1));$("#spd").textContent=nb(p.speed.toFixed(1))};
+if(sp)sp.onclick=()=>{p.speed=+(p.speed+0.1).toFixed(1);$("#spd").textContent=nb(p.speed.toFixed(1))};
+app.querySelectorAll(".hrbtn").forEach(b=>b.onclick=connectHR);
+updTread();updateHR();
+}
+function setDim(on,quiet){const p=player;if(!p)return;p.dim=on;const d=$("#dim");if(d)d.classList.toggle("hidden",!on);if(!on)p.lastTouch=Date.now();updTread();updateHR()}
+function updTread(){
+const p=player;if(!p)return;const c=$("#clock");if(!c)return;
+const left=p.step.dur-p.elapsedStep;
+c.textContent=fmt(left);
+const rest=p.steps.slice(p.i).reduce((a,s)=>a+s.dur,0)-p.elapsedStep;
+$("#totleft").textContent=fmt(rest);
+const t=$("#tot");if(t)t.textContent=fmt(p.elapsedTotal);
+const k=$("#km");if(k)k.textContent=km(p.dist);
+const bars=$("#pbar").children;bars[p.i].firstChild.style.transform=`scaleX(${Math.min(1,p.elapsedStep/p.step.dur)})`;
+if(p.dim){$("#dimleft").textContent=fmt(left);$("#dimtot").textContent=fmt(p.elapsedTotal);const dk=$("#dimkm");if(dk)dk.textContent=km(p.dist)}
+}
+function showConfirm(title,text,yes){
+const d=document.createElement("div");d.className="rest";d.innerHTML=`<h2 style="font-size:30px">${esc(title)}</h2><div class="muted">${esc(text)}</div><div class="row"><button class="btn" id="cno">Fortsett økta</button><button class="btn primary" id="cyes">Avslutt</button></div>`;
+document.body.appendChild(d);d.querySelector("#cno").onclick=()=>d.remove();d.querySelector("#cyes").onclick=()=>{d.remove();yes()};
+}
+function finishTread(){
+const p=player;clearInterval(p.t);keepAwake(false);beep(990,600);vib([400,150,400]);say("Bra jobba! Økta er ferdig.");
+const hs=S.hrSamples;
+S.pending={id:p.w.id,type:p.w.type,title:p.w.title,date:p.w.date,completedAt:new Date().toISOString(),durationSec:Math.round(p.elapsedTotal),
+distanceKm:p.step.kind==="hike"?null:+p.dist.toFixed(2),stepsDone:p.i+1,stepsTotal:p.steps.length,completed:p.i>=p.steps.length-1&&p.elapsedStep>=p.step.dur-1,
+hrAvg:hs.length?Math.round(hs.reduce((a,b)=>a+b,0)/hs.length):null,hrMax:hs.length?Math.max(...hs):null};
+player=null;S.view="summary";render();
+}
+/* ---------- Styrke-spiller ---------- */
+let animRaf=null;
+function startStrength(w){
+const ex=(w.exercises||[]).map(e=>({ex:e.ex,target:e.reps,sets:Array.from({length:e.sets},()=>({reps:e.reps,kg:lastKg(e.ex),done:false}))}));
+S.hrSamples=[];player={w,ex,i:-1,paused:false,started:Date.now(),strength:true};
+keepAwake(true);drawStrength();
+}
+function drawStrength(){
+const p=player;cancelAnimationFrame(animRaf);
+const nav=`<div class="exnav"><button class="${p.i===-1?"cur":""} ${p.warm?"ok":""}" data-go="-1" aria-label="Oppvarming">0</button>${p.ex.map((e,j)=>`<button data-go="${j}" class="${j===p.i?"cur":""} ${e.sets.every(s=>s.done)?"ok":""}" aria-label="Øvelse ${j+1}">${j+1}</button>`).join("")}</div>`;
+let body;
+if(p.i===-1){
+body=`<h1>Oppvarming</h1><div class="card"><div style="font-size:18px">5–8 minutter rolig på sykkel, mølle eller trappemaskin. Deretter 10 kroppsvektsknebøy og 10 armsirkler hver vei.</div></div>
+<button class="btn primary big wide" id="warmok">Oppvarming ferdig – første øvelse</button>`;
+}else{
+const e=p.ex[p.i],x=EX[e.ex]||{name:e.ex,cues:[],unit:"reps"};
+const unitL=x.unit==="sec"?"Sek":x.unit==="m"?"Meter":"Reps";
+body=`<div class="spread"><span class="muted">Øvelse ${p.i+1} av ${p.ex.length}</span><span class="muted">${esc(x.en||"")}</span></div>
+<h1>${esc(x.name)}${x.perSide?' <span class="muted" style="font-size:20px">per side</span>':""}</h1>
+<div class="fig"><svg id="fig" viewBox="0 -30 200 216" role="img" aria-label="Animasjon av ${esc(x.name)}"></svg></div>
+<ol class="cues">${(x.cues||[]).map(c=>`<li>${esc(c)}</li>`).join("")}</ol>
+<div class="sets">${e.sets.map((s,j)=>`<div class="set"><span class="n">${j+1}</span>
+<div class="field"><label for="r${j}">${unitL}</label><input id="r${j}" inputmode="numeric" value="${esc(s.reps)}" data-r="${j}"></div>
+<div class="field"><label for="k${j}">Kg</label><input id="k${j}" inputmode="decimal" value="${esc(s.kg)}" placeholder="–" data-k="${j}"></div>
+<button class="tick ${s.done?"on":""}" data-t="${j}" aria-label="Sett ${j+1} ferdig">✓</button></div>`).join("")}</div>
+<div class="row"><button class="btn" id="exprev">‹ Forrige</button><button class="btn primary" style="flex:1" id="exnext">${p.i===p.ex.length-1?"Ferdig med økta":"Neste øvelse ›"}</button></div>`;
+}
+app.innerHTML=`<div class="wrap"><div class="spread"><button class="btn" id="sstop">Avslutt</button>${hrChip()}</div>${nav}${body}</div>`;
+app.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{p.i=+b.dataset.go;drawStrength();window.scrollTo(0,0)});
+$("#sstop").onclick=()=>showConfirm("Avslutte styrkeøkta?","Det du har krysset av blir lagret.",finishStrength);
+app.querySelectorAll(".hrbtn").forEach(b=>b.onclick=connectHR);
+if(p.i===-1){$("#warmok").onclick=()=>{p.warm=true;p.i=0;drawStrength();window.scrollTo(0,0)};return}
+const e=p.ex[p.i];
+app.querySelectorAll("[data-r]").forEach(inp=>inp.oninput=()=>{e.sets[+inp.dataset.r].reps=inp.value});
+app.querySelectorAll("[data-k]").forEach(inp=>inp.oninput=()=>{const j=+inp.dataset.k;e.sets[j].kg=inp.value;for(let q=j+1;q<e.sets.length;q++)if(!e.sets[q].done){e.sets[q].kg=inp.value;const o=$("#k"+q);if(o)o.value=inp.value}});
+app.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{const j=+b.dataset.t;e.sets[j].done=!e.sets[j].done;b.classList.toggle("on",e.sets[j].done);if(e.sets[j].done){audio();const last=e.sets.every(s=>s.done)&&p.i===p.ex.length-1;if(!last)startRest((EX[e.ex]||{}).rest||75,e.sets.every(s=>s.done))}});
+$("#exprev").onclick=()=>{p.i=Math.max(-1,p.i-1);drawStrength();window.scrollTo(0,0)};
+$("#exnext").onclick=()=>{if(p.i===p.ex.length-1)finishStrength();else{p.i++;drawStrength();window.scrollTo(0,0)}};
+animate(EX[e.ex]);
+}
+function startRest(sec,exDone){
+const d=document.createElement("div");d.className="rest";let warned={};
+const nx=exDone&&player.ex[player.i+1]?(EX[player.ex[player.i+1].ex]||{}).name:null;
+d.innerHTML=`<div class="muted" style="font-size:20px;font-family:var(--font-display);letter-spacing:.08em">PAUSE</div><div class="clock tnum" id="rc"></div>${nx?`<div style="font-size:18px">Neste: <b>${esc(nx)}</b></div>`:'<div class="muted">Neste sett når tiden er ute</div>'}<div class="row"><button class="btn" id="rm">−15 s</button><button class="btn" id="rp">+15 s</button></div><button class="btn primary big" id="rskip">${nx?"Til neste øvelse":"Hopp over pausen"}</button>`;
+document.body.appendChild(d);let endT=performance.now()+sec*1000;
+const close=()=>{clearInterval(iv);d.remove();if(nx){player.i++;drawStrength();window.scrollTo(0,0)}};
+const iv=setInterval(()=>{const left=(endT-performance.now())/1000;const s=Math.ceil(left);const rc=d.querySelector("#rc");if(rc)rc.textContent=fmt(left);if(s<=3&&s>=1&&!warned[s]){warned[s]=1;beep(660,120)}if(left<=0){beep(990,400);vib([300,100,300]);close()}},200);
+d.querySelector("#rm").onclick=()=>endT-=15000;d.querySelector("#rp").onclick=()=>endT+=15000;d.querySelector("#rskip").onclick=close;
+}
+function finishStrength(){
+const p=player;cancelAnimationFrame(animRaf);keepAwake(false);beep(990,600);say("Bra jobba! Styrkeøkta er ferdig.");
+const hs=S.hrSamples;
+S.pending={id:p.w.id,type:"B",title:p.w.title,date:p.w.date,completedAt:new Date().toISOString(),durationSec:Math.round((Date.now()-p.started)/1000),
+strength:p.ex.map(e=>({ex:e.ex,name:(EX[e.ex]||{}).name||e.ex,sets:e.sets.map(s=>({reps:s.reps===""?null:+s.reps,kg:s.kg===""?null:+String(s.kg).replace(",","."),done:s.done}))})),
+setsDone:p.ex.reduce((a,e)=>a+e.sets.filter(s=>s.done).length,0),setsTotal:p.ex.reduce((a,e)=>a+e.sets.length,0),
+hrAvg:hs.length?Math.round(hs.reduce((a,b)=>a+b,0)/hs.length):null,hrMax:hs.length?Math.max(...hs):null};
+player=null;S.view="summary";render();
+}
+/* ---------- Oppsummering og logg ---------- */
+function renderSummary(){
+const l=S.pending;if(!l){S.view="home";return render()}
+const stat=(k,v)=>`<div class="tile"><div class="k">${k}</div><div class="v" style="font-size:38px">${v}</div></div>`;
+app.innerHTML=`<div class="wrap"><h1>Bra jobba!</h1><div class="muted">${esc(l.title)}</div>
+<div class="tiles">${stat("Tid",fmt(l.durationSec))}${l.type==="B"?stat("Sett",`${l.setsDone}/${l.setsTotal}`):stat("Steg",`${l.stepsDone}/${l.stepsTotal}`)}
+${l.distanceKm?stat("Km ca.",km(l.distanceKm)):""}${l.hrAvg?stat("Snittpuls",l.hrAvg):""}${l.hrMax?stat("Makspuls",l.hrMax):""}</div>
+<div class="card"><strong>Hvor hard var økta? (1 = veldig lett, 10 = maks)</strong><div class="rpe">${[1,2,3,4,5,6,7,8,9,10].map(n=>`<button data-rpe="${n}" class="${l.rpe===n?"on":""}">${n}</button>`).join("")}</div>
+<label for="cmt"><strong>Kommentar</strong> <span class="muted">(valgfritt – f.eks. vonde knær, tung dag)</span></label><textarea id="cmt">${esc(l.comment||"")}</textarea></div>
+<button class="btn primary big wide" id="save">Lagre økta</button><button class="btn wide" id="discard">Ikke lagre</button></div>`;
+app.querySelectorAll("[data-rpe]").forEach(b=>b.onclick=()=>{l.rpe=+b.dataset.rpe;app.querySelectorAll("[data-rpe]").forEach(x=>x.classList.toggle("on",+x.dataset.rpe===l.rpe))});
+$("#save").onclick=()=>{l.comment=$("#cmt").value.trim();const id=l.id;const data=Object.assign({},l);delete data.id;if(saveLog(id,data)){S.pending=null;S.view="home";toast("Økta er lagret.");render()}};
+$("#discard").onclick=()=>showConfirm("Forkaste økta?","Den blir ikke lagret i loggen.",()=>{S.pending=null;S.view="home";render()});
+}
+function renderHistory(){
+const ls=Object.entries(S.logs).sort((a,b)=>String(b[1].completedAt).localeCompare(String(a[1].completedAt)));
+app.innerHTML=`<div class="wrap"><button class="btn" id="back" style="align-self:flex-start">‹ Tilbake</button><h1>Logg</h1>
+<div class="card"><strong>Send loggen til Claude</strong><div class="muted" style="font-size:14px">Kopier loggen og lim den inn i chatten, så tar Claude den med i gjennomgangen.</div><button class="btn primary" id="cpy">Kopier loggen</button><textarea id="cpytxt" class="hidden" readonly></textarea></div>
+${ls.length?`<div class="list">`+ls.map(([id,l])=>{const d=new Date(l.completedAt);return `<div class="card"><div class="spread"><span class="row"><span class="tag ${l.type}">${l.type}</span><strong>${esc(l.title)}</strong></span><span class="muted">${d.getDate()}. ${MONTHS[d.getMonth()]}</span></div>
+<div class="muted tnum">${fmt(l.durationSec||0)}${l.distanceKm?` · ${km(l.distanceKm)} km`:""}${l.hrAvg?` · snittpuls ${l.hrAvg}`:""}${l.rpe?` · anstrengelse ${l.rpe}/10`:""}${l.setsTotal?` · ${l.setsDone}/${l.setsTotal} sett`:""}</div>
+${(l.strength||[]).length?`<div style="font-size:14px">`+l.strength.filter(e=>e.sets.some(s=>s.done)).map(e=>`${esc(e.name)}: ${e.sets.filter(s=>s.done).map(s=>`${s.reps??"–"}${s.kg?"×"+nb(s.kg)+" kg":""}`).join(", ")}`).join("<br>")+`</div>`:""}
+${l.comment?`<div class="muted" style="font-size:14px">«${esc(l.comment)}»</div>`:""}</div>`}).join("")+`</div>`:`<div class="banner">Ingen lagrede økter ennå.</div>`}</div>`;
+bindCommon();
+$("#cpy").onclick=async()=>{const t=exportText();if(!(await copy(t))){const ta=$("#cpytxt");ta.value=t;ta.classList.remove("hidden");ta.select();toast("Merk teksten og kopier den manuelt.")}};
+}
+/* ---------- Oppstart ---------- */
+if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}
+loadWorkouts();
+/* ---------- Animasjon ---------- */
+function animate(x){
+const svg=$("#fig");if(!svg||!x)return;
+const reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+const t0=performance.now();
+const frame=now=>{
+let f=((now-t0)%x.dur)/x.dur;f=f<.5?f*2:2-f*2;f=f<.5?2*f*f:1-Math.pow(-2*f+2,2)/2; if(reduce)f=.5;
+const P={};const keys=new Set([...Object.keys(x.A),...Object.keys(x.B)]);
+keys.forEach(k=>{const base=k.endsWith("2")?k.slice(0,-1):k;const a=x.A[k]||x.A[base],b=x.B[k]||x.B[base];P[k]=[a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f]});
+["el","ha","kn","ft"].forEach(k=>{if(!P[k+"2"])P[k+"2"]=P[k]});
+svg.innerHTML=drawFig(P,x);
+if(!reduce)animRaf=requestAnimationFrame(frame);
+};
+animRaf=requestAnimationFrame(frame);
+}
+function drawFig(P,x){
+const L=(a,b,c,w)=>`<line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`;
+const fg="#eef3f8",bg2="#6f7d90",pr="#4fb3ff";
+let s=`<line x1="0" y1="183" x2="200" y2="183" stroke="#2a3542" stroke-width="2"/>`;
+(x.props||[]).forEach(p=>{
+if(p.t==="line")s+=L(p.p[0],p.p[1],"#3a4757",6);
+if(p.t==="rect")s+=`<rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" rx="3" fill="#3a4757"/>`;
+if(p.t==="anchor")s+=`<circle cx="${p.p[0]}" cy="${p.p[1]}" r="5" fill="#3a4757"/>`;
+});
+s+=L(P.hip,P.kn2,bg2,8)+L(P.kn2,P.ft2,bg2,8)+L(P.ft2,[P.ft2[0]+10,P.ft2[1]],bg2,6);
+s+=L(P.sh,P.el2,bg2,7)+L(P.el2,P.ha2,bg2,7);
+s+=L(P.neck,P.hip,fg,11);
+s+=L(P.hip,P.kn,fg,9)+L(P.kn,P.ft,fg,9)+L(P.ft,[P.ft[0]+10,P.ft[1]],fg,7);
+s+=`<circle cx="${P.head[0].toFixed(1)}" cy="${P.head[1].toFixed(1)}" r="11" fill="${fg}"/>`;
+s+=L(P.sh,P.el,fg,8)+L(P.el,P.ha,fg,8);
+(x.props||[]).forEach(p=>{
+const a=P[p.at];
+if(p.t==="db"&&a)s+=`<rect x="${(a[0]-9).toFixed(1)}" y="${(a[1]-4).toFixed(1)}" width="18" height="8" rx="2" fill="${pr}"/>`;
+if(p.t==="bar"&&a)s+=L([a[0]-22,a[1]],[a[0]+22,a[1]],pr,5);
+if(p.t==="cable"&&a)s+=L([a[0],a[1]],[a[0],-30],"#4fb3ff88",2);
+if(p.t==="cablefrom"&&a)s+=L(p.from,a,"#4fb3ff88",2);
+if(p.t==="plate"&&a)s+=L([a[0]+6,a[1]-24],[a[0]+6,a[1]+20],pr,7);
+});
+return s;
+}
+</script>
+</body>
+</html>
