@@ -583,8 +583,14 @@ $("#cpy").onclick=async()=>{const t=exportText();if(!(await copy(t))){const ta=$
 if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}
 loadWorkouts();
 /* ---------- Animasjon ---------- */
+/* Bilder av øvelsene: start- og sluttposisjon fra Free Exercise DB (public domain, github.com/yuhonas/free-exercise-db) */
+const IMG_BASE="https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/";
+const IMG={rdl:"Stiff-Legged_Dumbbell_Deadlift",legpress:"Leg_Press",latpull:"Wide-Grip_Lat_Pulldown",dbbench:"Dumbbell_Bench_Press",stepup:"Dumbbell_Step_Ups",lunge:"Dumbbell_Rear_Lunge",pallof:"Pallof_Press",plank:"Plank",deadbug:"Dead_Bug",kneeraise:"Knee_Hip_Raise_On_Parallel_Bars",farmers:"Farmers_Walk"};
+Object.keys(IMG).forEach(k=>{if(EX[k])EX[k].img=IMG[k]});
+(()=>{const st=document.createElement("style");st.textContent=`.fig.photo{position:relative;padding:0;overflow:hidden;aspect-ratio:3/2}.fig.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.fig.photo img.b{animation:xf 3.4s ease-in-out infinite}.fig.photo .lbl{position:absolute;left:8px;bottom:8px;background:rgba(0,0,0,.65);color:#fff;font-size:12px;padding:3px 8px;border-radius:6px}@keyframes xf{0%,30%{opacity:0}45%,80%{opacity:1}95%,100%{opacity:0}}@media (prefers-reduced-motion: reduce){.fig.photo img.b{animation:none;opacity:0}}`;document.head.appendChild(st)})();
 function animate(x){
 const svg=$("#fig");if(!svg||!x)return;
+if(x.img){const f=svg.parentNode;f.classList.add("photo");f.innerHTML=`<img src="${IMG_BASE+x.img}/0.jpg" alt="${esc(x.name)} – start"><img class="b" src="${IMG_BASE+x.img}/1.jpg" alt="${esc(x.name)} – slutt"><span class="lbl">Start ⇄ slutt</span>`;return}
 const reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
 const t0=performance.now();
 const frame=now=>{
