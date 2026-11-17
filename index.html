@@ -66,6 +66,9 @@ h2{font-size:22px}
 .check{color:var(--ok);font-weight:700;font-size:20px}
 .steps{display:flex;flex-direction:column;gap:6px}
 .step{display:grid;grid-template-columns:8px 1fr auto;gap:10px;align-items:center;padding:8px 10px;background:var(--surface-2);border-radius:10px}
+button.step{width:100%;text-align:left;border:1px solid var(--line);touch-action:manipulation}
+button.step:active{border-color:var(--accent)}
+.btn:disabled{opacity:.35}
 .step .bar{width:8px;height:100%;min-height:30px;border-radius:4px}
 .tnum{font-variant-numeric:tabular-nums}
 .banner{padding:12px 14px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted);font-size:15px}
@@ -106,8 +109,8 @@ h2{font-size:22px}
 .cues{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
 .rest{position:fixed;inset:0;background:rgba(6,9,13,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:20;padding:20px}
 .rest .clock{font-size:min(40vw,190px)}
-.exnav{display:flex;gap:6px;flex-wrap:wrap}
-.exnav button{width:34px;height:34px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line);font-family:var(--font-display);font-weight:700}
+.exnav{display:flex;gap:8px;flex-wrap:wrap}
+.exnav button{min-width:46px;height:46px;font-size:18px;touch-action:manipulation;border-radius:8px;background:var(--surface-2);border:1px solid var(--line);font-family:var(--font-display);font-weight:700}
 .exnav button.cur{border-color:var(--accent);color:var(--accent)}
 .exnav button.ok{background:var(--ok);border-color:var(--ok);color:#03140b}
 .rpe{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
@@ -340,7 +343,7 @@ function renderDetail(){
 const w=S.cur;if(!w){S.view="home";return render()}
 const log=S.logs[w.id];const dl=dateLabel(w.date);
 const inner=w.type==="B"
-?`<div class="list">`+(w.exercises||[]).map((e,i)=>{const x=EX[e.ex]||{name:e.ex};return `<div class="step"><span class="bar" style="background:var(--z3)"></span><div><strong>${esc(x.name)}</strong><div class="muted" style="font-size:14px">${e.sets} × ${e.reps}${x.unit==="sec"?" sek":x.unit==="m"?" m":""}${x.perSide?" per side":""}</div></div><span class="muted">${i+1}</span></div>`}).join("")+`</div>`
+?`<div class="list">`+(w.exercises||[]).map((e,i)=>{const x=EX[e.ex]||{name:e.ex};return `<button class="step" data-exi="${i}" aria-label="Vis ${esc(x.name)}"><span class="bar" style="background:var(--z3)"></span><div><strong>${i+1}. ${esc(x.name)}</strong><div class="muted" style="font-size:14px">${e.sets} × ${e.reps}${x.unit==="sec"?" sek":x.unit==="m"?" m":""}${x.perSide?" per side":""}</div></div><span class="muted" style="font-size:22px">›</span></button>`}).join("")+`</div><div class="muted" style="font-size:14px">Trykk på en øvelse for å se hvordan den gjøres.</div>`
 :`<div class="steps">`+(w.steps||[]).map(stepRow).join("")+`</div>`;
 app.innerHTML=`<div class="wrap">
 <button class="btn" id="back" style="align-self:flex-start">‹ Tilbake</button>
@@ -361,6 +364,7 @@ ${toggleRow("t-speech","Tale","Stemmen leser opp neste steg",S.settings.speech)}
 </div>`;
 bindCommon();bindToggles();
 $("#start").onclick=()=>{audio();if(w.type==="B")startStrength(w);else startTread(w)};
+app.querySelectorAll("[data-exi]").forEach(b=>b.onclick=()=>showExercise(w,+b.dataset.exi));
 }
 function bindToggles(){
 [["t-awake","awake"],["t-dim","autoDim"],["t-speech","speech"]].forEach(([id,k])=>{const el=$("#"+id);if(el)el.onchange=()=>{S.settings[k]=el.checked;saveSettings();if(k==="awake"&&player)keepAwake(!player.paused)}});
@@ -476,9 +480,9 @@ player=null;S.view="summary";render();
 }
 /* ---------- Styrke-spiller ---------- */
 let animRaf=null;
-function startStrength(w){
+function startStrength(w,at){
 const ex=(w.exercises||[]).map(e=>({ex:e.ex,target:e.reps,sets:Array.from({length:e.sets},()=>({reps:e.reps,kg:lastKg(e.ex),done:false}))}));
-S.hrSamples=[];player={w,ex,i:-1,paused:false,started:Date.now(),strength:true};
+S.hrSamples=[];player={w,ex,i:at==null?-1:at,warm:at!=null,paused:false,started:Date.now(),strength:true};
 keepAwake(true);drawStrength();
 }
 function drawStrength(){
@@ -513,6 +517,24 @@ app.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{const j=+b.dataset.t;
 $("#exprev").onclick=()=>{p.i=Math.max(-1,p.i-1);drawStrength();window.scrollTo(0,0)};
 $("#exnext").onclick=()=>{if(p.i===p.ex.length-1)finishStrength();else{p.i++;drawStrength();window.scrollTo(0,0)}};
 animate(EX[e.ex]);
+}
+function showExercise(w,i){
+const e=w.exercises[i],x=EX[e.ex]||{name:e.ex,cues:[]};
+cancelAnimationFrame(animRaf);
+const d=document.createElement("div");d.className="rest";d.style.justifyContent="flex-start";d.style.overflowY="auto";
+d.innerHTML=`<div class="wrap" style="width:100%;padding:0"><div class="spread"><span class="muted">Øvelse ${i+1} av ${w.exercises.length}</span><span class="muted">${esc(x.en||"")}</span></div>
+<h1>${esc(x.name)}</h1><div class="muted">${e.sets} × ${e.reps}${x.unit==="sec"?" sek":x.unit==="m"?" m":""}${x.perSide?" per side":""}</div>
+<div class="fig"><svg id="fig" viewBox="0 -30 200 216" role="img" aria-label="Animasjon av ${esc(x.name)}"></svg></div>
+<ol class="cues">${(x.cues||[]).map(c=>`<li>${esc(c)}</li>`).join("")}</ol>
+<div class="row"><button class="btn" id="xprev" ${i===0?"disabled":""}>‹</button><button class="btn" style="flex:1" id="xclose">Lukk</button><button class="btn" id="xnext" ${i===w.exercises.length-1?"disabled":""}>›</button></div>
+<button class="btn primary big wide" id="xstart">Start økta her</button></div>`;
+document.body.appendChild(d);
+const close=()=>{cancelAnimationFrame(animRaf);d.remove()};
+d.querySelector("#xclose").onclick=close;
+d.querySelector("#xprev").onclick=()=>{if(i>0){close();showExercise(w,i-1)}};
+d.querySelector("#xnext").onclick=()=>{if(i<w.exercises.length-1){close();showExercise(w,i+1)}};
+d.querySelector("#xstart").onclick=()=>{close();audio();startStrength(w,i);window.scrollTo(0,0)};
+animate(x);
 }
 function startRest(sec,exDone){
 const d=document.createElement("div");d.className="rest";let warned={};
