@@ -308,7 +308,7 @@ function dateLabel(s){const d=dParse(s);return {wd:DAYS[d.getDay()],dm:`${d.getD
 function wSummary(w){if(w.type==="B")return `${(w.exercises||[]).length} øvelser`;const t=fmtMin(totalDur(w));return w.where?`${t} · ${w.where}`:t}
 function renderHome(){
 const t=todayStr(),ws=S.workouts;
-const next=ws.find(w=>w.date>=t&&!S.logs[w.id]);
+const isDone=w=>!!(S.logs[w.id]||(w.alt&&S.logs[w.alt]));const next=ws.find(w=>w.date>=t&&!isDone(w));const nextAlt=next&&next.alt?ws.find(w=>w.id===next.alt):null;
 const from=new Date();from.setDate(from.getDate()-3);
 const fromS=`${from.getFullYear()}-${pad(from.getMonth()+1)}-${pad(from.getDate())}`;
 const shown=ws.filter(w=>w.date>=fromS).slice(0,14);
@@ -317,8 +317,8 @@ if(!ws.length)body=`<div class="banner">Henter øktene … Er du uten nett, åpn
 if(next){const dl=dateLabel(next.date);
 body+=`<div class="card next"><div class="spread"><span class="tag ${next.type}">${next.type} · ${TYPE_NAME[next.type]||""}</span><span class="muted">${next.date===t?"I dag":dl.wd+" "+dl.dm}</span></div>
 <h2 style="font-size:28px">${esc(next.title)}</h2><div class="muted">${esc(wSummary(next))}</div>
-<button class="btn primary big wide" data-open="${esc(next.id)}">Se økta og start</button></div>`}
-if(shown.length){body+=`<h2>Plan</h2><div class="list">`+shown.map(w=>{const dl=dateLabel(w.date);const done=!!S.logs[w.id];
+<button class="btn primary big wide" data-open="${esc(next.id)}">Se økta og start</button>${nextAlt?`<button class="btn wide" data-open="${esc(nextAlt.id)}">Dårlig vær? ${esc(nextAlt.title)}</button>`:""}</div>`}
+if(shown.length){body+=`<h2>Plan</h2><div class="list">`+shown.map(w=>{const dl=dateLabel(w.date);const done=isDone(w);
 return `<button class="item ${w.date===t?"today":""} ${done?"done":""}" data-open="${esc(w.id)}"><div class="d">${dl.wd}<b>${dParse(w.date).getDate()}.</b></div>
 <div><div class="row"><span class="tag ${w.type}">${w.type}</span><strong>${esc(w.title)}</strong></div><div class="muted" style="font-size:14px">${esc(wSummary(w))}</div></div>
 <div>${done?'<span class="check" aria-label="Fullført">✓</span>':'<span class="muted">›</span>'}</div></button>`}).join("")+`</div>`}
