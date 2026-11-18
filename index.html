@@ -132,6 +132,9 @@ textarea{width:100%;min-height:70px;font:inherit;padding:10px;border-radius:10px
 .dimstep{font-family:var(--font-display);font-size:26px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px}
 .dimhr{font-family:var(--font-display);font-weight:700;font-size:min(40vw,200px);line-height:.9}
 .dimrow{display:flex;gap:28px;margin-top:24px;flex-wrap:wrap;justify-content:center}
+.dimnext{font-family:var(--font-display);font-size:30px;font-weight:700;color:var(--accent);margin:6px 0 14px;text-transform:uppercase;letter-spacing:.03em}
+.dim.blink{animation:dblink .45s ease-out 2}
+@keyframes dblink{0%,25%{background:#fff}100%{background:#000}}
 .dimv{font-family:var(--font-display);font-weight:600;font-size:44px;line-height:1}
 .dimlbl{font-size:14px;text-transform:uppercase;letter-spacing:.08em}
 #toast{position:fixed;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom) + 16px);background:var(--surface-2);border:1px solid var(--line);padding:14px;border-radius:12px;z-index:40;font-size:15px}
@@ -207,7 +210,7 @@ A:P({kn:[110,140],ft:[118,178],kn2:[92,140],ft2:[82,178]}),B:P({kn:[92,140],ft:[
 const LS={logs:"oyv.logs.v1",workouts:"oyv.workouts.v1",settings:"oyv.settings.v1"};
 const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const S={workouts:[],wVersion:null,logs:store.get(LS.logs,{}),view:"home",cur:null,hr:null,hrDev:null,hrSamples:[],
-settings:Object.assign({awake:true,speech:true,autoDim:false},store.get(LS.settings,{}))};
+settings:Object.assign({awake:true,speech:true,autoDim:false,autoDimStrength:false},store.get(LS.settings,{}))};
 let player=null;
 const $=s=>document.querySelector(s);
 const app=$("#app");
@@ -356,6 +359,7 @@ ${inner}
 <div class="card">
 ${toggleRow("t-awake","Hold skjermen på","Skjermen slukker ikke under økta",S.settings.awake)}
 ${w.type!=="B"?toggleRow("t-dim","Demp skjermen automatisk","Etter 30 sek vises bare puls, tid og km i dempet visning. Trykk for full visning",S.settings.autoDim):""}
+${w.type==="B"?toggleRow("t-dims","Dempet visning på styrkeøkta","Etter 30 sek uten berøring vises bare øvelse, sett, pause og puls. Trykk for full visning",S.settings.autoDimStrength):(w.steps||[]).some(x=>x.ex)?toggleRow("t-dims","Demp også under øvelsene på matta","Av: skjermen holdes lys med bilder og stikkord mens du gjør øvelsene",S.settings.autoDimStrength):""}
 ${toggleRow("t-speech","Tale","Stemmen leser opp neste steg",S.settings.speech)}
 </div>
 <div class="banner">Trykk start på klokka samtidig${w.type==="B"?" («Styrke»)":w.type==="C"?" (Terrengløp-profilen)":" (Garmin-økta ligger klar)"}.</div>
@@ -367,7 +371,7 @@ $("#start").onclick=()=>{audio();if(w.type==="B")startStrength(w);else startTrea
 app.querySelectorAll("[data-exi]").forEach(b=>b.onclick=()=>showExercise(w,+b.dataset.exi));
 }
 function bindToggles(){
-[["t-awake","awake"],["t-dim","autoDim"],["t-speech","speech"]].forEach(([id,k])=>{const el=$("#"+id);if(el)el.onchange=()=>{S.settings[k]=el.checked;saveSettings();if(k==="awake"&&player)keepAwake(!player.paused)}});
+[["t-awake","awake"],["t-dim","autoDim"],["t-dims","autoDimStrength"],["t-speech","speech"]].forEach(([id,k])=>{const el=$("#"+id);if(el)el.onchange=()=>{S.settings[k]=el.checked;saveSettings();if(k==="awake"&&player)keepAwake(!player.paused)}});
 }
 function renderSettings(){
 app.innerHTML=`<div class="wrap">
@@ -375,6 +379,7 @@ app.innerHTML=`<div class="wrap">
 <div class="card">
 ${toggleRow("t-awake","Hold skjermen på under økta","Skjermen slukker ikke mens en økt pågår",S.settings.awake)}
 ${toggleRow("t-dim","Demp skjermen automatisk på mølla","Etter 30 sek uten berøring vises bare puls, tid og km",S.settings.autoDim)}
+${toggleRow("t-dims","Demp skjermen automatisk på styrke- og kjerneøvelser","Etter 30 sek uten berøring vises bare øvelse, sett, pause og puls",S.settings.autoDimStrength)}
 ${toggleRow("t-speech","Tale ved stegbytte","Stemmen leser opp neste steg",S.settings.speech)}
 </div>
 <div class="card"><h2>Nye økter fra Claude</h2>
@@ -407,8 +412,9 @@ const p=player;if(!p)return;const now=performance.now();const dt=(now-p.last)/10
 p.elapsedStep+=dt;p.elapsedTotal+=dt;if(p.step.kind!=="hike")p.dist+=p.speed*dt/3600;
 const left=p.step.dur-p.elapsedStep,sec=Math.ceil(left);
 if(sec<=3&&sec>=1&&!p.warned[p.i+":"+sec]){p.warned[p.i+":"+sec]=1;beep(660,120)}
+if(sec===10&&p.step.dur>=20&&p.i<p.steps.length-1&&!p.warned[p.i+":10"]){p.warned[p.i+":10"]=1;beep(880,250);setTimeout(()=>beep(880,250),350);vib([150,80,150]);blinkEl($("#dim"));blinkEl($("#pl"),"flash")}
 if(left<=0){if(p.i>=p.steps.length-1){finishTread();return}beep(990,400);vib([300,100,300]);setStep(p.i+1);return}
-if(S.settings.autoDim&&!p.dim&&Date.now()-p.lastTouch>30000&&Date.now()>p.wakeUntil)setDim(true);
+if(S.settings.autoDim&&(!p.step.ex||S.settings.autoDimStrength)&&!p.dim&&Date.now()-p.lastTouch>30000&&Date.now()>p.wakeUntil)setDim(true);
 updTread();
 }
 function drawTread(flash){
@@ -436,6 +442,7 @@ ${s.ex&&EX[s.ex]?matFig(s.ex):""}${s.note?`<div class="note">${esc(s.note)}</div
 </div>
 <div class="dim ${p.dim?"":"hidden"}" id="dim" role="button" aria-label="Trykk for full visning">
 <div class="dimstep" id="dimstep">${esc(s.label||k.l)}</div>
+<div class="dimnext hidden" id="dimnext">${nx?`Neste: ${esc(nx.label||(KIND[nx.kind]||KIND.walk).l)}${nx.incline!=null?` · ${nb(nx.incline)} %`:""}${nx.speed?` · ${nb(nx.speed)} km/t`:""}`:""}</div>
 <div class="dimhr tnum" id="dimhr">--</div><div class="dimlbl">puls</div>
 <div class="dimrow"><div><div class="dimv tnum" id="dimleft"></div><div class="dimlbl">igjen av steget</div></div><div><div class="dimv tnum" id="dimtot"></div><div class="dimlbl">tid totalt</div></div>${s.kind!=="hike"?`<div><div class="dimv tnum" id="dimkm"></div><div class="dimlbl">km ca.</div></div>`:""}</div>
 <div class="dimlbl" style="margin-top:24px">Trykk for full visning</div>
@@ -464,7 +471,7 @@ $("#totleft").textContent=fmt(rest);
 const t=$("#tot");if(t)t.textContent=fmt(p.elapsedTotal);
 const k=$("#km");if(k)k.textContent=km(p.dist);
 const bars=$("#pbar").children;bars[p.i].firstChild.style.transform=`scaleX(${Math.min(1,p.elapsedStep/p.step.dur)})`;
-if(p.dim){$("#dimleft").textContent=fmt(left);$("#dimtot").textContent=fmt(p.elapsedTotal);const dk=$("#dimkm");if(dk)dk.textContent=km(p.dist)}
+if(p.dim){$("#dimleft").textContent=fmt(left);$("#dimtot").textContent=fmt(p.elapsedTotal);const dk=$("#dimkm");if(dk)dk.textContent=km(p.dist);const dn=$("#dimnext");if(dn)dn.classList.toggle("hidden",!(left<=10&&p.i<p.steps.length-1))}
 }
 function showConfirm(title,text,yes){
 const d=document.createElement("div");d.className="rest";d.innerHTML=`<h2 style="font-size:30px">${esc(title)}</h2><div class="muted">${esc(text)}</div><div class="row"><button class="btn" id="cno">Fortsett økta</button><button class="btn primary" id="cyes">Avslutt</button></div>`;
@@ -482,8 +489,8 @@ player=null;S.view="summary";render();
 let animRaf=null;
 function startStrength(w,at){
 const ex=(w.exercises||[]).map(e=>({ex:e.ex,target:e.reps,sets:Array.from({length:e.sets},()=>({reps:e.reps,kg:lastKg(e.ex),done:false}))}));
-S.hrSamples=[];player={w,ex,i:at==null?-1:at,warm:at!=null,paused:false,started:Date.now(),strength:true};
-keepAwake(true);fsOn();drawStrength();
+S.hrSamples=[];player={w,ex,i:at==null?-1:at,warm:at!=null,paused:false,started:Date.now(),strength:true,lastTouch:Date.now(),sdim:false};
+keepAwake(true);fsOn();sDimEnsure();drawStrength();player.sdT=setInterval(sTick,500);
 }
 function drawStrength(){
 const p=player;cancelAnimationFrame(animRaf);
@@ -505,7 +512,8 @@ body=`<div class="spread"><span class="muted">Øvelse ${p.i+1} av ${p.ex.length}
 <button class="tick ${s.done?"on":""}" data-t="${j}" aria-label="Sett ${j+1} ferdig">✓</button></div>`).join("")}</div>
 <div class="row"><button class="btn" id="exprev">‹ Forrige</button><button class="btn primary" style="flex:1" id="exnext">${p.i===p.ex.length-1?"Ferdig med økta":"Neste øvelse ›"}</button></div>`;
 }
-app.innerHTML=`<div class="wrap"><div class="spread"><button class="btn" id="sstop">Avslutt</button>${hrChip()}</div>${nav}${body}</div>`;
+app.innerHTML=`<div class="wrap"><div class="spread"><button class="btn" id="sstop">Avslutt</button><span class="row">${hrChip()}<button class="chip" id="sdimbtn">Dempet</button></span></div>${nav}${body}</div>`;
+$("#sdimbtn").onclick=()=>sDimSet(true);
 app.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{p.i=+b.dataset.go;drawStrength();window.scrollTo(0,0)});
 $("#sstop").onclick=()=>showConfirm("Avslutte styrkeøkta?","Det du har krysset av blir lagret.",finishStrength);
 app.querySelectorAll(".hrbtn").forEach(b=>b.onclick=connectHR);
@@ -541,12 +549,13 @@ const d=document.createElement("div");d.className="rest";let warned={};
 const nx=exDone&&player.ex[player.i+1]?(EX[player.ex[player.i+1].ex]||{}).name:null;
 d.innerHTML=`<div class="muted" style="font-size:20px;font-family:var(--font-display);letter-spacing:.08em">PAUSE</div><div class="clock tnum" id="rc"></div>${nx?`<div style="font-size:18px">Neste: <b>${esc(nx)}</b></div>`:'<div class="muted">Neste sett når tiden er ute</div>'}<div class="row"><button class="btn" id="rm">−15 s</button><button class="btn" id="rp">+15 s</button></div><button class="btn primary big" id="rskip">${nx?"Til neste øvelse":"Hopp over pausen"}</button>`;
 document.body.appendChild(d);if(nx)sec=Math.max(sec,120);let endT=performance.now()+sec*1000;
-const close=()=>{clearInterval(iv);d.remove();if(nx){player.i++;drawStrength();window.scrollTo(0,0)}};
-const iv=setInterval(()=>{const left=(endT-performance.now())/1000;const s=Math.ceil(left);const rc=d.querySelector("#rc");if(rc)rc.textContent=fmt(left);if(s<=3&&s>=1&&!warned[s]){warned[s]=1;beep(660,120)}if(left<=0){beep(990,400);vib([300,100,300]);close()}},200);
+player.restLeft=()=>(endT-performance.now())/1000;player.restNext=nx;
+const close=()=>{clearInterval(iv);d.remove();if(player){player.restLeft=null;player.restNext=null}if(nx&&player){player.i++;drawStrength();window.scrollTo(0,0)}};
+const iv=setInterval(()=>{const left=(endT-performance.now())/1000;const s=Math.ceil(left);const rc=d.querySelector("#rc");if(rc)rc.textContent=fmt(left);if(s===10&&!warned[10]){warned[10]=1;beep(880,250);vib([150,80,150]);if(player&&player.sdim)blinkEl($("#sdim"))}if(s<=3&&s>=1&&!warned[s]){warned[s]=1;beep(660,120)}if(left<=0){beep(990,400);vib([300,100,300]);if(player&&player.sdim)blinkEl($("#sdim"));close()}},200);
 d.querySelector("#rm").onclick=()=>endT-=15000;d.querySelector("#rp").onclick=()=>endT+=15000;d.querySelector("#rskip").onclick=close;
 }
 function finishStrength(){
-const p=player;cancelAnimationFrame(animRaf);keepAwake(false);fsOff();beep(990,600);say("Bra jobba! Styrkeøkta er ferdig.");
+const p=player;cancelAnimationFrame(animRaf);clearInterval(p.sdT);const sd=$("#sdim");if(sd)sd.remove();document.querySelectorAll(".rest").forEach(x=>x.remove());keepAwake(false);fsOff();beep(990,600);say("Bra jobba! Styrkeøkta er ferdig.");
 const hs=S.hrSamples;
 S.pending={id:p.w.id,type:"B",title:p.w.title,date:p.w.date,completedAt:new Date().toISOString(),durationSec:Math.round((Date.now()-p.started)/1000),
 strength:p.ex.map(e=>({ex:e.ex,name:(EX[e.ex]||{}).name||e.ex,sets:e.sets.map(s=>({reps:s.reps===""?null:+s.reps,kg:s.kg===""?null:+String(s.kg).replace(",","."),done:s.done}))})),
@@ -591,6 +600,22 @@ Object.keys(IMG).forEach(k=>{if(EX[k])EX[k].img=IMG[k]});
 const TEMPO={rdl:"2 sek ned, 1 sek opp",legpress:"2 sek ned, 1 sek opp – ikke lås knærne",latpull:"1 sek ned, kort stopp ved brystet, 2 sek opp",dbbench:"2 sek ned, 1 sek opp",stepup:"Rolig opp, 2 sek kontrollert ned. Ta alle reps på ett bein, så bytt",lunge:"3 sek ned, 1 sek opp",pallof:"Hold 2 sek med strake armer, 2 sek tilbake",plank:"Hold hele tiden og pust rolig",deadbug:"3 sek ut, 1 sek tilbake, annenhver side",kneeraise:"1 sek opp, 2 sek ned – ikke sving",farmers:"Jevne, korte skritt hele strekket"};
 const VQ={rdl:"dumbbell romanian deadlift form",legpress:"leg press machine proper form",latpull:"lat pulldown proper form",dbbench:"dumbbell bench press form",stepup:"dumbbell step up proper form",lunge:"slow reverse lunge form",pallof:"pallof press cable form",plank:"forearm plank proper form",deadbug:"dead bug exercise form",kneeraise:"captain's chair knee raise form",farmers:"farmers walk dumbbells form"};
 function fsOn(){try{const d=document.documentElement;if(!document.fullscreenElement&&d.requestFullscreen)d.requestFullscreen({navigationUI:"hide"}).catch(()=>{})}catch(e){}}function fsOff(){try{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}catch(e){}}
+function blinkEl(el,cls){if(!el)return;cls=cls||"blink";el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls);setTimeout(()=>el.classList.remove(cls),1000)}
+document.addEventListener("pointerdown",()=>{if(player)player.lastTouch=Date.now()},true);
+function sDimEnsure(){let d=$("#sdim");if(d)d.remove();d=document.createElement("div");d.className="dim hidden";d.id="sdim";d.setAttribute("role","button");d.setAttribute("aria-label","Trykk for full visning");
+d.innerHTML=`<div class="dimstep" id="sdimex"></div><div class="dimnext" id="sdimset"></div><div class="dimhr tnum" id="dimhr">--</div><div class="dimlbl">puls</div><div class="dimrow"><div id="sdimrestw"><div class="dimv tnum" id="sdimrest"></div><div class="dimlbl" id="sdimrestl">pause igjen</div></div><div><div class="dimv tnum" id="sdimtot"></div><div class="dimlbl">tid totalt</div></div></div><div class="dimlbl" style="margin-top:24px">Trykk for full visning</div>`;
+d.onclick=()=>sDimSet(false);document.body.appendChild(d)}
+function sDimSet(on){const p=player;if(!p||!p.strength)return;p.sdim=on;const d=$("#sdim");if(d)d.classList.toggle("hidden",!on);if(!on)p.lastTouch=Date.now();sTick();updateHR()}
+function sTick(){const p=player;if(!p||!p.strength)return;
+if(!p.sdim&&S.settings.autoDimStrength&&Date.now()-p.lastTouch>30000)sDimSet(true);
+if(!p.sdim)return;
+const e=p.i>=0?p.ex[p.i]:null,x=e?(EX[e.ex]||{name:e.ex}):null;
+$("#sdimex").textContent=e?x.name:"Oppvarming";
+const done=e?e.sets.filter(q=>q.done).length:0;
+$("#sdimset").textContent=e?(done>=e.sets.length?"Alle sett ferdig":`Sett ${done+1} av ${e.sets.length}`):"";
+const rl=p.restLeft?p.restLeft():null;$("#sdimrestw").classList.toggle("hidden",rl==null);
+if(rl!=null){$("#sdimrest").textContent=fmt(rl);$("#sdimrestl").textContent=p.restNext?"til "+p.restNext:"pause igjen";$("#sdimrest").style.color=rl<=10?"var(--accent)":""}
+$("#sdimtot").textContent=fmt((Date.now()-p.started)/1000)}
 function matFig(k){const x=EX[k];const q=VQ[k];
 return `<div class="fig photo">${x.img?`<img src="${IMG_BASE+x.img}/0.jpg" alt="${esc(x.name)} – start"><img class="b" src="${IMG_BASE+x.img}/1.jpg" alt="${esc(x.name)} – slutt"><span class="lbl">Start ⇄ slutt</span>`:""}</div><ol class="cues">${(x.cues||[]).map(c=>`<li>${esc(c)}</li>`).join("")}</ol>${TEMPO[k]?`<div class="restinfo"><div><b>Tempo:</b> ${esc(TEMPO[k])}</div></div>`:""}${q?`<a class="btn wide vlink" href="https://www.youtube.com/results?search_query=${encodeURIComponent(q)}" target="_blank" rel="noopener">▶ Se video av øvelsen (YouTube)</a>`:""}`}
 function exExtra(x){const k=Object.keys(EX).find(q=>EX[q]===x);const t=TEMPO[k],q=VQ[k];
