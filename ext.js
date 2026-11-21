@@ -40,7 +40,7 @@ function tvCard(){
   if(!I.media)h+=`<div class="muted" style="font-size:14px">Anbefalt: gi appen varseltilgang, så pauser og starter den ${esc(nm)} mer pålitelig.</div><button class="btn" id="permmd">Gi tilgang til avspillingsstyring</button>`;
   if(apps.length){
     h+=(apps.length>1?`<label class="muted" for="tvapp" style="font-size:14px">Strømmeapp</label><select id="tvapp" class="btn">${apps.map(a=>`<option value="${a[0]}" ${a[0]===S.settings.tvApp?"selected":""}>${a[1]}</option>`).join("")}</select>`:"")
-      +`<button class="btn wide" id="tvopen">Åpne ${esc(nm)} og velg hva du vil se</button><div class="muted" style="font-size:14px">Start avspillingen og gå tilbake hit, så starter du økta. Når skjermen dempes etter 15 sek, fortsetter ${esc(nm)} med pulsfeltet på siden.</div>`;
+      +`<button class="btn wide" id="tvopen">Åpne ${esc(nm)} og velg hva du vil se</button><div class="muted" style="font-size:14px">Start det du vil se. Når det spiller, pauses det og du kommer tilbake hit av deg selv (eller trykk «Tilbake til økta»). Start så økta – når skjermen dempes etter 15 sek, fortsetter ${esc(nm)} med pulsstripen til høyre.</div>`;
   }else h+=`<div class="banner">Fant ingen strømmeapp (Netflix, NRK TV, YouTube …) på telefonen.</div>`;
   card.insertAdjacentHTML("afterend",h+`</div>`);
   const b1=$("#permov");if(b1)b1.onclick=()=>AB.requestOverlay();
