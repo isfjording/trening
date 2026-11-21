@@ -89,7 +89,7 @@ if(AB){
     const p=player,was=!!(p&&p.dim);_sd.apply(this,arguments);
     if(!p||!p.steps||!S.settings.tvMode)return;
     if(on&&!was){lastOv="";pushOv();try{AB.tvDim(S.settings.tvApp||"com.netflix.mediaclient")}catch(e){}}
-    else if(!on&&was){try{AB.tvWake()}catch(e){}if(p.step.dur-p.elapsedStep<=11)setTimeout(()=>{blinkEl($("#pl"),"flash")},500)}
+    else if(!on&&was){try{AB.tvWake()}catch(e){}if(p.step.dur-p.elapsedStep<=11){setTimeout(()=>{blinkEl($("#pl"),"flash")},700);setTimeout(()=>{blinkEl($("#pl"),"flash")},1800)}}
   };
   let lastOv="";
   const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
@@ -100,7 +100,7 @@ if(AB){
       n:(nx&&left<=10)?"Neste: "+(nx.label||(KIND[nx.kind]||KIND.walk).l):""};
     const j=JSON.stringify(o);if(j!==lastOv){lastOv=j;try{AB.overlay(j)}catch(e){}}
   }
-  const _ut=updTread;updTread=function(){_ut.apply(this,arguments);pushOv()};
+  const _ut=updTread;updTread=function(){_ut.apply(this,arguments);const p=player;if(p&&p.steps&&p.dim&&S.settings.tvMode&&p.i<p.steps.length-1&&p.step.dur>=20&&p.step.dur-p.elapsedStep<=10){p.wakeUntil=Date.now()+20000;setDim(false);return}pushOv()};
   const _uh=updateHR;updateHR=function(){_uh.apply(this,arguments);pushOv()};
   window.__nt=()=>{if(player&&player.t&&player.steps)tickTread()};
   window.__tvTap=()=>{if(player&&player.steps){player.lastTouch=Date.now();setDim(false)}};
