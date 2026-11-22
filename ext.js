@@ -66,6 +66,15 @@ renderSettings=function(){
     else c.insertAdjacentHTML("afterend",`<div class="card"><h2>Android-app</h2><div class="muted">Appen kan pause og starte Netflix automatisk og vise puls og tid i et lite felt over filmen. Last ned og installer filen på telefonen (tillat installasjon fra Chrome når telefonen spør).</div><a class="btn primary" href="${APK}">Last ned Android-appen</a></div>`)}
 };
 
+/* ---------- Høydemeter på mølla: distanse × stigning ---------- */
+const _tt=tickTread;tickTread=function(){const p=player,d0=p&&p.steps?p.dist:0;_tt.apply(this,arguments);if(p&&p.steps&&p.dist>d0)p.climb=(p.climb||0)+(p.dist-d0)*10*((p.step&&p.step.incline)||0)};
+const _ut0=updTread;updTread=function(){_ut0.apply(this,arguments);const p=player;if(!p||!p.steps||!p.steps.some(s=>s.incline>0))return;const v=Math.round(p.climb||0)+"";
+if(!$("#hm")){const t=app.querySelector(".player .tiles");if(t)t.insertAdjacentHTML("beforeend",`<div class="tile"><div class="k">Høydemeter ca.</div><div class="v tnum"><span id="hm">0</span><small>m</small></div></div>`)}
+const h=$("#hm");if(h)h.textContent=v;
+if(p.dim){if(!$("#dimhm")){const r=app.querySelector(".dimrow");if(r)r.insertAdjacentHTML("beforeend",`<div><div class="dimv tnum" id="dimhm"></div><div class="dimlbl">høydemeter</div></div>`)}const d=$("#dimhm");if(d)d.textContent=v}};
+const _ft0=finishTread;finishTread=function(){const p=player;_ft0.apply(this,arguments);if(p&&p.steps&&S.pending&&p.climb>=1){S.pending.climbM=Math.round(p.climb);if(S.view==="summary")render()}};
+const _rsum=renderSummary;renderSummary=function(){_rsum.apply(this,arguments);const l=S.pending;const t=app.querySelector(".tiles");if(l&&l.climbM&&t)t.insertAdjacentHTML("beforeend",`<div class="tile"><div class="k">Høydemeter ca.</div><div class="v" style="font-size:38px">${l.climbM}</div></div>`)};
+
 /* ---------- Android-appen ---------- */
 if(AB){
   say=function(t){if(!S.settings.speech)return;try{AB.speak(String(t))}catch(e){}};
