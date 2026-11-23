@@ -66,6 +66,18 @@ renderSettings=function(){
     else c.insertAdjacentHTML("afterend",`<div class="card"><h2>Android-app</h2><div class="muted">Appen kan pause og starte Netflix automatisk og vise puls og tid i et lite felt over filmen. Last ned og installer filen på telefonen (tillat installasjon fra Chrome når telefonen spør).</div><a class="btn primary" href="${APK}">Last ned Android-appen</a></div>`)}
 };
 
+/* ---------- Apparatene på senteret (Life Fitness og Hammer Strength) ---------- */
+Object.assign(EX,{
+legext:{name:"Leg extension (Life Fitness)",en:"Leg Extension (Machine)",unit:"reps",rest:75,img:"Leg_Extensions",cues:["Kneleddet på linje med apparatets dreiepunkt","Rull opp til nesten strake bein, kort stopp","Senk sakte på 3 sek – det trener lårene for nedoverbakker","Hold rumpa i setet hele tiden"]},
+legcurl:{name:"Leg curl (Life Fitness)",en:"Seated Leg Curl (Machine)",unit:"reps",rest:75,img:"Seated_Leg_Curl",cues:["Puten rett over hælene, lårputen godt ned","Bøy knærne så langt du kommer","Kort stopp, så rolig tilbake","Ikke løft hofta fra setet"]},
+chin:{name:"Assisted chin (Life Fitness)",en:"Assisted Pull Up",unit:"reps",rest:90,img:"Chin-Up",cues:["Vekta du velger hjelper deg: mer vekt = lettere","Knærne på plattformen, grep litt bredere enn skuldrene","Trekk brystet opp mot håndtakene, skuldrene ned og bak","Senk kontrollert helt ned. Reduser hjelpen etter hvert"]},
+mrow:{name:"Row (Hammer Strength)",en:"Iso-Lateral Row (Machine)",unit:"reps",rest:90,img:"Leverage_Iso_Row",cues:["Brystet mot puten, rak rygg","Trekk albuene bakover langs kroppen","Klem skulderbladene sammen et sekund","Strekk armene rolig ut igjen"]},
+dip:{name:"Assisted dip (Life Fitness)",en:"Assisted Dip",unit:"reps",rest:90,img:"Parallel_Bar_Dip",cues:["Vekta du velger hjelper deg: mer vekt = lettere","Lett foroverlent, albuene bakover","Senk til ca. 90° i albuene – ikke dypere hvis skuldrene murrer","Press opp til nesten strake armer"]},
+sideplank:{name:"Sideplanke",en:"Side Plank",unit:"sec",perSide:true,rest:45,img:"Side_Bridge",cues:["Albuen rett under skulderen","Rett linje fra hode til føtter","Løft hofta – ikke la den synke","Pust rolig. Lettere: knærne i gulvet"]}});
+EX.legpress.name="Seated leg press (Life Fitness)";EX.stepup.name="Step-up på kasse (manualer)";
+Object.assign(TEMPO,{legext:"1 sek opp, kort stopp, 3 sek ned",legcurl:"1 sek inn, kort stopp, 2 sek tilbake",chin:"1 sek opp, 2–3 sek ned",mrow:"1 sek inn, 1 sek stopp, 2 sek ut",dip:"2 sek ned, 1 sek opp",sideplank:"Hold hele tiden, bytt side"});
+Object.assign(VQ,{legext:"leg extension machine proper form slow eccentric",legcurl:"seated leg curl machine form",chin:"assisted pull up machine form",mrow:"hammer strength iso lateral row form",dip:"assisted dip machine form",sideplank:"side plank proper form"});
+
 /* ---------- Høydemeter på mølla: distanse × stigning ---------- */
 const _tt=tickTread;tickTread=function(){const p=player,d0=p&&p.steps?p.dist:0;_tt.apply(this,arguments);if(p&&p.steps&&p.dist>d0)p.climb=(p.climb||0)+(p.dist-d0)*10*((p.step&&p.step.incline)||0)};
 const _ut0=updTread;updTread=function(){_ut0.apply(this,arguments);const p=player;if(!p||!p.steps||!p.steps.some(s=>s.incline>0))return;const v=Math.round(p.climb||0)+"";
