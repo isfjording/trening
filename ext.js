@@ -92,8 +92,8 @@ const _ss=setStep;setStep=function(i){const p=player;if(p&&p.steps&&p.steps[i])p
 const _ut1=updTread;updTread=function(){_ut1.apply(this,arguments);const p=player;if(!p||!p.steps)return;
 if(p.step.kind!=="hike"&&p.step.incline!=null){if(p.inc==null)p.inc=p.step.incline;let el=$("#inc");
 if(!el){const tile=[...app.querySelectorAll(".player .tiles .tile")].find(t=>/Stigning/i.test((t.querySelector(".k")||{}).textContent||""));
-if(tile){tile.querySelector(".v").innerHTML=`<span id="inc"></span><small>%</small>`;tile.insertAdjacentHTML("beforeend",`<div class="adj"><button id="im" aria-label="Senk stigningen 0,5">−</button><button id="ip" aria-label="Øk stigningen 0,5">+</button></div>`);
-$("#im").onclick=()=>{p.inc=Math.max(0,Math.round((p.inc-0.5)*2)/2);updTread()};$("#ip").onclick=()=>{p.inc=Math.min(15,Math.round((p.inc+0.5)*2)/2);updTread()};el=$("#inc")}}
+if(tile){tile.querySelector(".v").innerHTML=`<span id="inc"></span><small>%</small>`;tile.insertAdjacentHTML("beforeend",`<div class="adj"><button id="im" aria-label="Senk stigningen 1 %">−</button><button id="ip" aria-label="Øk stigningen 1 %">+</button></div>`);
+$("#im").onclick=()=>{p.inc=Math.max(0,Math.round(p.inc)-1);updTread()};$("#ip").onclick=()=>{p.inc=Math.min(15,Math.round(p.inc)+1);updTread()};el=$("#inc")}}
 if(el)el.textContent=nb(p.inc)}
 const left=p.step.dur-p.elapsedStep;
 if(!p.w.free&&p.i===p.steps.length-1&&p.step.dur>=20&&!p.endWarn&&left<=10&&left>0){p.endWarn=1;beep(880,250);setTimeout(()=>beep(880,250),350);vib([150,80,150]);say("Ti sekunder igjen av økta");p.wakeUntil=Date.now()+60000;blinkEl($("#dim"));blinkEl($("#pl"),"flash");if(p.dim)setDim(false);setTimeout(()=>blinkEl($("#pl"),"flash"),700);setTimeout(()=>blinkEl($("#pl"),"flash"),1800)}};
