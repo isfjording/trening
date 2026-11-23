@@ -79,13 +79,24 @@ Object.assign(TEMPO,{legext:"1 sek opp, kort stopp, 3 sek ned",legcurl:"1 sek in
 Object.assign(VQ,{legext:"leg extension machine proper form slow eccentric",legcurl:"seated leg curl machine form",chin:"assisted pull up machine form",mrow:"hammer strength iso lateral row form",dip:"assisted dip machine form",sideplank:"side plank proper form"});
 
 /* ---------- Høydemeter på mølla: distanse × stigning ---------- */
-const _tt=tickTread;tickTread=function(){const p=player,d0=p&&p.steps?p.dist:0;_tt.apply(this,arguments);if(p&&p.steps&&p.dist>d0)p.climb=(p.climb||0)+(p.dist-d0)*10*((p.step&&p.step.incline)||0)};
+const _tt=tickTread;tickTread=function(){const p=player,d0=p&&p.steps?p.dist:0;_tt.apply(this,arguments);if(p&&p.steps&&p.dist>d0)p.climb=(p.climb||0)+(p.dist-d0)*10*(p.inc!=null?p.inc:((p.step&&p.step.incline)||0))};
 const _ut0=updTread;updTread=function(){_ut0.apply(this,arguments);const p=player;if(!p||!p.steps||!p.steps.some(s=>s.incline>0))return;const v=Math.round(p.climb||0)+"";
 if(!$("#hm")){const t=app.querySelector(".player .tiles");if(t)t.insertAdjacentHTML("beforeend",`<div class="tile"><div class="k">Høydemeter ca.</div><div class="v tnum"><span id="hm">0</span><small>m</small></div></div>`)}
 const h=$("#hm");if(h)h.textContent=v;
 if(p.dim){if(!$("#dimhm")){const r=app.querySelector(".dimrow");if(r)r.insertAdjacentHTML("beforeend",`<div><div class="dimv tnum" id="dimhm"></div><div class="dimlbl">høydemeter</div></div>`)}const d=$("#dimhm");if(d)d.textContent=v}};
 const _ft0=finishTread;finishTread=function(){const p=player;_ft0.apply(this,arguments);if(p&&p.steps&&S.pending&&p.climb>=1){S.pending.climbM=Math.round(p.climb);if(S.view==="summary")render()}};
 const _rsum=renderSummary;renderSummary=function(){_rsum.apply(this,arguments);const l=S.pending;const t=app.querySelector(".tiles");if(l&&l.climbM&&t)t.insertAdjacentHTML("beforeend",`<div class="tile"><div class="k">Høydemeter ca.</div><div class="v" style="font-size:38px">${l.climbM}</div></div>`)};
+
+/* ---------- Justerbar stigning og varsel 10 sek før slutt ---------- */
+const _ss=setStep;setStep=function(i){const p=player;if(p&&p.steps&&p.steps[i])p.inc=p.steps[i].incline;_ss.apply(this,arguments)};
+const _ut1=updTread;updTread=function(){_ut1.apply(this,arguments);const p=player;if(!p||!p.steps)return;
+if(p.step.kind!=="hike"&&p.step.incline!=null){if(p.inc==null)p.inc=p.step.incline;let el=$("#inc");
+if(!el){const tile=[...app.querySelectorAll(".player .tiles .tile")].find(t=>/Stigning/i.test((t.querySelector(".k")||{}).textContent||""));
+if(tile){tile.querySelector(".v").innerHTML=`<span id="inc"></span><small>%</small>`;tile.insertAdjacentHTML("beforeend",`<div class="adj"><button id="im" aria-label="Senk stigningen 0,5">−</button><button id="ip" aria-label="Øk stigningen 0,5">+</button></div>`);
+$("#im").onclick=()=>{p.inc=Math.max(0,Math.round((p.inc-0.5)*2)/2);updTread()};$("#ip").onclick=()=>{p.inc=Math.min(15,Math.round((p.inc+0.5)*2)/2);updTread()};el=$("#inc")}}
+if(el)el.textContent=nb(p.inc)}
+const left=p.step.dur-p.elapsedStep;
+if(!p.w.free&&p.i===p.steps.length-1&&p.step.dur>=20&&!p.endWarn&&left<=10&&left>0){p.endWarn=1;beep(880,250);setTimeout(()=>beep(880,250),350);vib([150,80,150]);say("Ti sekunder igjen av økta");p.wakeUntil=Date.now()+60000;blinkEl($("#dim"));blinkEl($("#pl"),"flash");if(p.dim)setDim(false);setTimeout(()=>blinkEl($("#pl"),"flash"),700);setTimeout(()=>blinkEl($("#pl"),"flash"),1800)}};
 
 /* ---------- Android-appen ---------- */
 if(AB){
