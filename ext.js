@@ -78,6 +78,20 @@ EX.legpress.name="Seated leg press (Life Fitness)";EX.stepup.name="Step-up på k
 Object.assign(TEMPO,{legext:"1 sek opp, kort stopp, 3 sek ned",legcurl:"1 sek inn, kort stopp, 2 sek tilbake",chin:"1 sek opp, 2–3 sek ned",mrow:"1 sek inn, 1 sek stopp, 2 sek ut",dip:"2 sek ned, 1 sek opp",sideplank:"Hold hele tiden, bytt side"});
 Object.assign(VQ,{legext:"leg extension machine proper form slow eccentric",legcurl:"seated leg curl machine form",chin:"assisted pull up machine form",mrow:"hammer strength iso lateral row form",dip:"assisted dip machine form",sideplank:"side plank proper form"});
 
+/* ---------- Styrke: kg per hånd, ingen vekt på kroppsvekt, nedtelling på holdøvelser ---------- */
+["plank","sideplank","deadbug","kneeraise"].forEach(k=>{if(EX[k])EX[k].bw=true});
+["stepup","rdl","lunge","farmers","dbbench"].forEach(k=>{if(EX[k])EX[k].db=true});
+const _ds=drawStrength;drawStrength=function(){_ds.apply(this,arguments);const p=player;if(!p||!p.strength||p.i<0)return;const e=p.ex[p.i],x=EX[e.ex]||{};
+app.querySelectorAll("[data-k]").forEach(inp=>{const f=inp.closest(".field");if(!f)return;if(x.bw)f.style.display="none";else if(x.db){const l=f.querySelector("label");if(l)l.textContent="Kg per hånd"}});
+if(x.unit==="sec")e.sets.forEach((st,j)=>{const t=app.querySelector(`[data-t="${j}"]`);if(!t)return;t.insertAdjacentHTML("beforebegin",`<button class="btn" data-tm="${j}" style="min-height:44px;padding:0 12px">▶ Start</button>`);app.querySelector(`[data-tm="${j}"]`).onclick=()=>holdTimer(e,j,x)})};
+function holdTimer(e,j,x){audio();const secs=Math.max(5,parseInt(e.sets[j].reps,10)||30);const sides=x.perSide?2:1;
+const d=document.createElement("div");d.className="rest";d.innerHTML=`<div class="muted" id="htlbl" style="font-size:20px"></div><div class="tnum" id="htv" style="font-family:var(--font-display);font-weight:700;font-size:min(45vmin,220px);line-height:1"></div><div class="muted" id="htsub" style="font-size:18px">${esc(x.name)} – sett ${j+1}</div><button class="btn wide" id="htx">Avbryt</button>`;document.body.appendChild(d);
+let phase=0,side=1,end=0,last=-1,stop=false;const ph=[];ph.push({lbl:"Gjør deg klar",dur:3,kind:"ready"});for(let s=1;s<=sides;s++){ph.push({lbl:sides>1?(s===1?"Første side":"Andre side"):"Hold",dur:secs,kind:"hold"});if(s<sides)ph.push({lbl:"Bytt side",dur:5,kind:"switch"})}
+const go=i=>{phase=i;end=Date.now()+ph[i].dur*1000;last=-1;$("#htlbl").textContent=ph[i].lbl;$("#htv").style.color=ph[i].kind==="hold"?"":"var(--accent)";if(ph[i].kind==="hold"){beep(990,300);vib(200);say(ph[i].lbl==="Hold"?"Start":ph[i].lbl)}else if(ph[i].kind==="switch"){beep(660,200);say("Bytt side")}};
+const tk=setInterval(()=>{if(stop)return;const left=Math.max(0,Math.ceil((end-Date.now())/1000));if(left!==last){last=left;$("#htv").textContent=left;if(left<=3&&left>=1)beep(ph[phase].kind==="hold"?880:660,120)}
+if(Date.now()>=end){if(phase<ph.length-1)go(phase+1);else{stop=true;clearInterval(tk);beep(990,500);vib([300,100,300]);say("Ferdig");d.remove();const t=app.querySelector(`[data-t="${j}"]`);if(t&&!e.sets[j].done)t.click()}}},150);
+$("#htx").onclick=()=>{stop=true;clearInterval(tk);d.remove()};go(0)}
+
 /* ---------- Høydemeter på mølla: distanse × stigning ---------- */
 const _tt=tickTread;tickTread=function(){const p=player,d0=p&&p.steps?p.dist:0;_tt.apply(this,arguments);if(p&&p.steps&&p.dist>d0)p.climb=(p.climb||0)+(p.dist-d0)*10*(p.inc!=null?p.inc:((p.step&&p.step.incline)||0))};
 const _ut0=updTread;updTread=function(){_ut0.apply(this,arguments);const p=player;if(!p||!p.steps||!p.steps.some(s=>s.incline>0))return;const v=Math.round(p.climb||0)+"";
