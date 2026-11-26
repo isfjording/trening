@@ -92,6 +92,15 @@ const tk=setInterval(()=>{if(stop)return;const left=Math.max(0,Math.ceil((end-Da
 if(Date.now()>=end){if(phase<ph.length-1)go(phase+1);else{stop=true;clearInterval(tk);beep(990,500);vib([300,100,300]);say("Ferdig");d.remove();const t=app.querySelector(`[data-t="${j}"]`);if(t&&!e.sets[j].done)t.click()}}},150);
 $("#htx").onclick=()=>{stop=true;clearInterval(tk);d.remove()};go(0)}
 
+/* ---------- Styrke: foreslått vekt fra planen og vurdering per øvelse ---------- */
+const FEEL=[["lett","Lett"],["passe","Passe"],["tungt","Tungt"]];
+const _sst=startStrength;startStrength=function(w){_sst.apply(this,arguments);const p=player;if(!p||!p.strength)return;(w.exercises||[]).forEach((we,i)=>{const e=p.ex[i];if(!e)return;e.plan=we.kg!=null?we.kg:null;if(we.kg!=null)e.sets.forEach(s=>{if(!s.done)s.kg=we.kg})});drawStrength()};
+const _ds2=drawStrength;drawStrength=function(){_ds2.apply(this,arguments);const p=player;if(!p||!p.strength||p.i<0)return;const e=p.ex[p.i],x=EX[e.ex]||{};const sets=app.querySelector(".sets");if(!sets)return;
+let h="";if(e.plan!=null&&!x.bw)h+=`<div class="muted" style="font-size:14px">Foreslått: ${nb(e.plan)} kg${x.db?" per hånd":(e.ex==="chin"||e.ex==="dip"?" hjelp (mer = lettere)":"")}</div>`;
+h+=`<div class="muted" style="font-size:14px;margin-top:6px">Hvordan gikk øvelsen?</div><div class="row" style="flex-wrap:wrap">${FEEL.map(f=>`<button class="chip ${e.feel===f[0]?"on":""}" data-feel="${f[0]}">${f[1]}</button>`).join("")}</div><div class="muted" style="font-size:12px">Lett = 3 eller flere reps igjen i siste sett · Passe = 1–2 igjen · Tungt = ingen igjen, eller klarte ikke alle</div>`;
+sets.insertAdjacentHTML("afterend",h);app.querySelectorAll("[data-feel]").forEach(b=>b.onclick=()=>{e.feel=e.feel===b.dataset.feel?null:b.dataset.feel;app.querySelectorAll("[data-feel]").forEach(o=>o.classList.toggle("on",o.dataset.feel===e.feel))})};
+const _fs=finishStrength;finishStrength=function(){const p=player;_fs.apply(this,arguments);if(p&&p.ex&&S.pending&&S.pending.strength)S.pending.strength.forEach((st,i)=>{const e=p.ex[i];if(!e)return;if(e.feel)st.feel=e.feel;if(e.plan!=null)st.plan=e.plan})};
+
 /* ---------- Høydemeter på mølla: distanse × stigning ---------- */
 const _tt=tickTread;tickTread=function(){const p=player,d0=p&&p.steps?p.dist:0;_tt.apply(this,arguments);if(p&&p.steps&&p.dist>d0)p.climb=(p.climb||0)+(p.dist-d0)*10*(p.inc!=null?p.inc:((p.step&&p.step.incline)||0))};
 const _ut0=updTread;updTread=function(){_ut0.apply(this,arguments);const p=player;if(!p||!p.steps||!p.steps.some(s=>s.incline>0))return;const v=Math.round(p.climb||0)+"";
