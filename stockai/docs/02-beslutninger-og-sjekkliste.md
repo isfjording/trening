@@ -129,7 +129,7 @@ stockai/
 |---|---|---|---|
 | 1 | **Privat GitHub-repo `stockai`** opprettet, og Claude GitHub App gitt tilgang til det. Ny Claude-økt startes med repoet valgt. (Tilgangen til `trening` virker heller ikke i dag.) | Du | ☐ |
 | 2 | **Børsdata API-nøkkel**. Mottatt. Den skal *ikke* limes inn i chatten, men legges i `.env` på PC-en. | Du | ☑ |
-| 3 | ~~Anthropic API-nøkkel~~. Trengs ikke. I stedet: **hvilket Claude-abonnement du har** (Pro eller Max), og at Claude Code kan installeres på PC-en | Du | ☐ |
+| 3 | Claude-abonnement: **Max** (romslige bruksgrenser). Claude Code må installeres på PC-en. | Du | ☑ |
 | 4 | **Eksempelfil fra Nordnet:** eksport av transaksjoner («Transaksjoner og sluttsedler» → eksporter), helst med flere typer rader: kjøp, salg, utbytte, innskudd, gjerne splitt og utenlandsk utbytte med kildeskatt. Du kan slette rader eller endre beløp, men behold kolonnene og formatet uendret. | Du | ☐ |
 | 5 | **Hvilket operativsystem PC-en har** (Windows, Mac eller Linux), og om den står på det meste av tiden | Du | ☐ |
 | 6 | **Hvilke kontotyper** du har hos Nordnet (ASK, AF, IPS/aksjesparekonto, utenlandske aksjer) | Du | ☐ |
