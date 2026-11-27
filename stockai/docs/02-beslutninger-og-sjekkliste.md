@@ -12,8 +12,8 @@ Bygger på: `01-gjennomgang-av-prompt.md` og svarene dine
 | Investeringsprofil | Langsiktig. Hovedmålet er å kunne **leve av utbytte**. I tillegg et eget spor for **sterkt momentum** (vekstaksjer uten utbytte). |
 | Form | En egen app som er installert på PC-en, med tilgang fra mobil. Web-dashboard som kan installeres på mobilen som en app (PWA). |
 | Data | Børsdata Pro+ er hovedkilden (venter på API-nøkkel). Nordnet-transaksjoner importeres som fil. |
-| LLM | Anthropic |
-| Websøk | Lav kostnad er et krav (se punkt 4) |
+| LLM | **Ingen ekstra kostnad:** LLM-delen kjøres via Claude-abonnementet du allerede har (Claude Code / Claude Desktop + vår MCP-server). Ingen betalt API-nøkkel. Se punkt 4. |
+| Websøk | Claude sitt innebygde websøk i abonnementet. Ingen egen søketjeneste. |
 | Rekkefølge | Ingenting bygges før sjekklisten i punkt 6 er ferdig |
 
 ---
@@ -71,26 +71,35 @@ Anbefaling:
 ## 3. Lagring og personvern
 - Porteføljedata, transaksjoner og API-nøkler blir **kun på din maskin**
 - Koden ligger i et **privat** GitHub-repo. Mappen med data (`data/`) og `.env` committes aldri.
-- LLM-kall sender bare det som trengs for analysen til Anthropic (selskapsdata, nyheter). Porteføljebeløp sendes bare når du ber om en porteføljeanalyse, og det kan slås av.
+- LLM-analysene (via Claude-abonnementet) får bare det som trengs for analysen (selskapsdata, nyheter). Porteføljebeløp sendes bare når du ber om en porteføljeanalyse, og det kan slås av.
 
 ---
 
-## 4. Kostnader (estimat)
+## 4. Null ekstra kostnad – slik gjøres det
 
-| Post | Kostnad |
-|---|---|
-| Børsdata Pro+ | Har du allerede |
-| Tailscale, ntfy | Gratis |
-| **Websøk** | Vi bruker Anthropics innebygde websøk: **$10 per 1000 søk (≈ 1 øre per søk)**, på samme API-nøkkel. Ingen egen søketjeneste eller ekstra nøkkel trengs. |
-| Børsmeldinger (NewsWeb) | Gratis (offentlig) |
-| Makro (Norges Bank, SSB) | Gratis (åpne API-er) |
-| **Dyp analyse av én aksje** | Grovt anslag: **$1–2 (≈ 10–25 kr)**. Billig modell (Haiku/Sonnet) til nyhetsklassifisering og delanalyser, sterkeste modell (Opus) bare til komitéen. |
-| **Kvant-screening av hele børsen** | **0 kr** i LLM-kostnad (ren beregning) |
-| Ukentlig porteføljegjennomgang (~15 aksjer, lett pass) | Anslag: noen få kroner per uke |
+**Prinsipp:** Appen gjør alt som er tall og regler selv, gratis. Alt som krever språkforståelse gjøres av Claude via abonnementet ditt, ikke via det betalte API-et.
 
-Månedlig total ved normal bruk: sannsynligvis **under 100–200 kr**. Appen får en innebygd kostnadsteller og en **månedlig maksgrense** som du setter selv. Anslagene over er estimater og må måles når systemet kjører.
+| Del | Hvordan | Kostnad |
+|---|---|---|
+| Kurser, regnskap, nøkkeltall, innsidedata | Børsdata Pro+ | Har du |
+| Beregninger, scorer, screening, backtest, utbytte, portefølje, varsler | Appen (ren Python) | 0 kr |
+| Børsmeldinger | Oslo Børs NewsWeb (offentlig) | 0 kr |
+| Makro (renter, valuta, laksepris, KPI) | Norges Bank og SSB (åpne API-er) | 0 kr |
+| Mobiltilgang og push-varsler | Tailscale og ntfy | 0 kr |
+| **Agentanalysene** (teknisk, fundamental, verdsettelse, nyheter, bull/bear, cross-check, devil's advocate, komité) | Definert som **Claude Code-subagenter** i repoet. De bruker MCP-serveren vår for data og Claudes innebygde websøk for nyheter. | Inngår i abonnementet |
+| **«Analyser»-knappen i dashboardet** (også fra mobil) | Backenden på PC-en starter Claude Code i bakgrunnen (headless, `claude -p`). Resultatet lagres i appen og vises i dashboardet. | Inngår i abonnementet |
+| **Ukentlig porteføljegjennomgang** | Planlagt jobb på PC-en som kjører Claude Code på samme måte | Inngår i abonnementet |
+| Chat med dataene | Claude Desktop/Code + MCP-serveren | Inngår i abonnementet |
 
----
+**Hva vi gir opp sammenlignet med betalt API:**
+- **Bruksgrenser:** Analyser teller mot abonnementets grenser. Med Pro rekker du trolig noen dype analyser per dag pluss ukentlig gjennomgang. Med Max er det romslig. Appen holder derfor LLM-bruken lav: kvant-screening uten LLM, lett gjennomgang som standard og full multi-agent-analyse bare når du ber om det.
+- **PC-en må stå på**, og Claude Code må være installert og innlogget der, for at knappen og ukesjobben skal virke.
+- **Litt mindre finkontroll** over modell og parametere per agent. Prompter og agentdefinisjoner versjoneres likevel i git, så sporbarheten beholdes.
+- **Ikke garantert stabil automatisering.** Hvis grensen er nådd, settes jobben på vent og prøves igjen senere. Rapporten sier tydelig «LLM-analyse ikke tilgjengelig». Kvant-delen kjører uansett.
+
+**Vurdering:** Rundt 90 % av nytten ligger i data, beregninger, screening, backtest, porteføljeoppfølging og varsler, og alt det er gratis. Selve LLM-analysen blir nesten like god via abonnementet. Forskjellen er hovedsakelig volum og automatisering, ikke kvalitet.
+
+**Lagt til rette for betalt API senere:** LLM-laget er et grensesnitt med to mulige motorer: «Claude Code (abonnement)» (standard) og «Anthropic API» (valgfritt). Du kan bytte i `config/agents.yaml` uten å bygge noe om.
 
 ## 5. Repo-struktur (forslag)
 Eget privat repo: `stockai`
@@ -119,8 +128,8 @@ stockai/
 | # | Hva | Hvem | Status |
 |---|---|---|---|
 | 1 | **Privat GitHub-repo `stockai`** opprettet, og Claude GitHub App gitt tilgang til det. Ny Claude-økt startes med repoet valgt. (Tilgangen til `trening` virker heller ikke i dag.) | Du | ☐ |
-| 2 | **Børsdata API-nøkkel** | Du (venter) | ☐ |
-| 3 | **Anthropic API-nøkkel** fra console.anthropic.com, med månedlig forbruksgrense satt. NB: et Claude-abonnement gir *ikke* API-tilgang. API-et faktureres separat. | Du | ☐ |
+| 2 | **Børsdata API-nøkkel**. Mottatt. Den skal *ikke* limes inn i chatten, men legges i `.env` på PC-en. | Du | ☑ |
+| 3 | ~~Anthropic API-nøkkel~~. Trengs ikke. I stedet: **hvilket Claude-abonnement du har** (Pro eller Max), og at Claude Code kan installeres på PC-en | Du | ☐ |
 | 4 | **Eksempelfil fra Nordnet:** eksport av transaksjoner («Transaksjoner og sluttsedler» → eksporter), helst med flere typer rader: kjøp, salg, utbytte, innskudd, gjerne splitt og utenlandsk utbytte med kildeskatt. Du kan slette rader eller endre beløp, men behold kolonnene og formatet uendret. | Du | ☐ |
 | 5 | **Hvilket operativsystem PC-en har** (Windows, Mac eller Linux), og om den står på det meste av tiden | Du | ☐ |
 | 6 | **Hvilke kontotyper** du har hos Nordnet (ASK, AF, IPS/aksjesparekonto, utenlandske aksjer) | Du | ☐ |
