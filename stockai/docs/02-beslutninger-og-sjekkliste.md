@@ -127,13 +127,13 @@ stockai/
 
 | # | Hva | Hvem | Status |
 |---|---|---|---|
-| 1 | **Privat GitHub-repo `stockai`** opprettet, og Claude GitHub App gitt tilgang til det. Ny Claude-økt startes med repoet valgt. (Tilgangen til `trening` virker heller ikke i dag.) | Du | ☐ |
+| 1 | **Privat GitHub-repo `stockai`** opprettet, og Claude GitHub App gitt tilgang til det. (Tilgang til `trening` virker nå.) | Du | ☐ |
 | 2 | **Børsdata API-nøkkel**. Mottatt. Den skal *ikke* limes inn i chatten, men legges i `.env` på PC-en. | Du | ☑ |
 | 3 | Claude-abonnement: **Max** (romslige bruksgrenser). Claude Code må installeres på PC-en. | Du | ☑ |
 | 4 | **Eksempelfil fra Nordnet:** eksport av transaksjoner («Transaksjoner og sluttsedler» → eksporter), helst med flere typer rader: kjøp, salg, utbytte, innskudd, gjerne splitt og utenlandsk utbytte med kildeskatt. Du kan slette rader eller endre beløp, men behold kolonnene og formatet uendret. | Du | ☐ |
-| 5 | **Hvilket operativsystem PC-en har** (Windows, Mac eller Linux), og om den står på det meste av tiden | Du | ☐ |
-| 6 | **Hvilke kontotyper** du har hos Nordnet (ASK, AF, IPS/aksjesparekonto, utenlandske aksjer) | Du | ☐ |
-| 7 | **Utbyttemål:** ønsket utbytte per år. Valgfritt, kan settes i appen senere. | Du | ☐ |
+| 5 | PC: **Windows**, står på det meste av tiden. Backend installeres som en tjeneste som starter automatisk, med et enkelt installasjonsscript (PowerShell + `uv`). | Du | ☑ |
+| 6 | Kontotyper: IKZ, ASK m.fl. Leses ut av Nordnet-filen. | Du | ☑ |
+| 7 | Utbyttemål: **1 000 000 kr/år**. Avklares: før eller etter skatt? Utbytte skattes med ca. 37,8 % effektivt (2025-sats) utenfor skjerming, så 1 mill. etter skatt tilsvarer ca. 1,6 mill. før skatt. Ved 5–6 % direkteavkastning trengs ca. 17–20 mill. kr i kapital for 1 mill. før skatt. | Du | ☑ |
 | 8 | **Godkjenne denne planen** eller si hva du vil endre | Du | ☐ |
 
 Når punkt 1, 4, 5 og 8 er klare, kan jeg begynne. Børsdata-nøkkelen (punkt 2) trengs først når klienten skal verifiseres mot ekte data. Frem til da bygger jeg mot dokumentasjonen og testdata, og første oppgave med nøkkelen blir et discovery-script som du kjører én gang.
